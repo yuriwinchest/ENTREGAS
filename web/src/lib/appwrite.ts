@@ -79,12 +79,20 @@ export const api = {
         if (byBib.documents.length > 0) return byBib.documents;
       }
 
-      // Prioridade 2: Busca por Chip exato
+      // Prioridade 2: Busca por Chip exato ou QR Code
       const byChip = await databases.listDocuments<Participant>(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
         Query.equal("chip", upper),
         Query.limit(5)
       ]);
       if (byChip.documents.length > 0) return byChip.documents;
+
+      try {
+        const byQr = await databases.listDocuments<Participant>(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
+          Query.equal("qr_code", cleanTerm),
+          Query.limit(5)
+        ]);
+        if (byQr.documents.length > 0) return byQr.documents;
+      } catch {}
 
       // Prioridade 3: Busca por CPF
       if (cleanTerm.length >= 8) {
@@ -278,6 +286,7 @@ export const api = {
       shirt?: string;
       modality?: string;
       category?: string;
+      qr_code?: string;
     }>,
     onProgress?: (current: number, total: number) => void
   ): Promise<{ inserted: number; errors: number }> {
@@ -288,6 +297,7 @@ export const api = {
       const p = participantsList[i];
       try {
         const folded = normalizeFolded(p.name);
+        const qr = p.qr_code ? String(p.qr_code).trim() : String(p.bib_number).trim();
         await databases.createDocument(
           DATABASE_ID,
           COLLECTIONS.PARTICIPANTS,
@@ -303,6 +313,7 @@ export const api = {
             shirt: p.shirt ? String(p.shirt).trim().toUpperCase() : null,
             modality: p.modality ? String(p.modality).trim() : null,
             category: p.category ? String(p.category).trim() : null,
+            qr_code: qr,
             delivered_at: null,
             receiver_name: null
           }

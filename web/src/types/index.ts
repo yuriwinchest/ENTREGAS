@@ -12,6 +12,7 @@ export interface Participant {
   shirt?: string;
   modality?: string;
   category?: string;
+  qr_code?: string;
   delivered_at?: string | null;
   receiver_name?: string | null;
 }

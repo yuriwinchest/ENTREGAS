@@ -14,12 +14,14 @@ import {
   Clock, 
   Sparkles,
   History,
-  X
+  X,
+  QrCode
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Participant } from "../types";
 import { api } from "../lib/appwrite";
 import { sounds } from "../lib/audio";
+import { QRCodeModal } from "./QRCodeModal";
 
 interface DeliveryDeskProps {
   operatorName: string;
@@ -40,6 +42,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
   const [loading, setLoading] = useState(false);
   const [delivering, setDelivering] = useState(false);
   const [lastDelivered, setLastDelivered] = useState<Participant | null>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -322,7 +325,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
             </div>
 
             {/* Grid de Metadados da Inscrição */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-6">
               <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Modalidade</span>
                 <span className="text-sm font-bold text-white mt-0.5 block truncate">
@@ -337,13 +340,32 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 col-span-2 sm:col-span-1">
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
-                  <Cpu className="w-3 h-3 text-brand-400" /> Chip / EPC RFID
+                  <Cpu className="w-3 h-3 text-emerald-400" /> Chip / EPC
                 </span>
-                <span className="text-xs font-mono text-brand-400 mt-0.5 block truncate font-bold">
+                <span className="text-xs font-mono text-emerald-400 mt-0.5 block truncate font-bold">
                   {selectedAthlete.chip || "---"}
                 </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block flex items-center gap-1">
+                    <QrCode className="w-3 h-3 text-brand-400" /> QR Code
+                  </span>
+                  <span className="text-xs font-mono text-brand-400 mt-0.5 block truncate font-bold">
+                    {selectedAthlete.qr_code || selectedAthlete.bib_number}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-brand-500 text-brand-400 hover:text-brand-300 transition-all cursor-pointer"
+                  title="Abrir e Imprimir QR Code"
+                >
+                  <QrCode className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -526,6 +548,14 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal de QR Code do Atleta Selecionado */}
+      {isQrModalOpen && selectedAthlete && (
+        <QRCodeModal
+          athlete={selectedAthlete}
+          onClose={() => setIsQrModalOpen(false)}
+        />
+      )}
 
     </div>
   );
