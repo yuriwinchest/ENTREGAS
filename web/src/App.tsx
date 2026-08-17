@@ -80,6 +80,9 @@ export function App() {
   };
 
   useEffect(() => {
+    // Sincroniza dados da nuvem apenas se houver usuário autenticado ou no modo Telão
+    if (!user && currentTab !== "telao") return;
+
     refreshData();
 
     // Polling inteligente a cada 4s para sincronização contínua
@@ -100,7 +103,7 @@ export function App() {
     } catch {
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [user, currentTab]);
 
   // Logout
   const handleLogout = async () => {
@@ -108,15 +111,15 @@ export function App() {
     setUser(null);
   };
 
-  // Carregamento Inicial de Sessão
+  // Carregamento Inicial Ultrarrápido de Sessão
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-navy-950 flex flex-col items-center justify-center font-sans">
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-2xl shadow-brand-500/30 mb-4 animate-pulse">
+      <div className="min-h-screen bg-navy-950 flex flex-col items-center justify-center font-sans select-none">
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-2xl shadow-brand-500/40 mb-4 animate-pulse">
           <Zap className="w-9 h-9 text-white fill-white" />
         </div>
-        <div className="flex items-center gap-2 text-brand-400 font-mono text-sm">
-          <Loader2 className="w-4 h-4 animate-spin" />
+        <div className="flex items-center gap-2.5 text-brand-400 font-mono text-sm">
+          <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
           <span>Iniciando CHIPOWER Cloud...</span>
         </div>
       </div>

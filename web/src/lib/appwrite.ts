@@ -29,7 +29,12 @@ export const auth = {
 
   async getCurrentUser(): Promise<Models.User<Models.Preferences> | null> {
     try {
-      return await account.get();
+      // Timeout seguro de 1.2s para evitar que a tela inicial trave esperando resposta
+      const timeoutPromise = new Promise<null>((resolve) => 
+        setTimeout(() => resolve(null), 1200)
+      );
+      const userPromise = account.get().catch(() => null);
+      return await Promise.race([userPromise, timeoutPromise]);
     } catch {
       return null;
     }
