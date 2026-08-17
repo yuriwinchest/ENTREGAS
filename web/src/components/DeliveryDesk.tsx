@@ -19,7 +19,7 @@ import {
   Printer
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { Participant } from "../types";
+import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
 import { sounds } from "../lib/audio";
 import { QRCodeModal } from "./QRCodeModal";
@@ -29,12 +29,14 @@ interface DeliveryDeskProps {
   operatorName: string;
   onDeliveryComplete: () => void;
   recentDeliveries: Participant[];
+  activeEvent?: EventItem | null;
 }
 
 export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
   operatorName,
   onDeliveryComplete,
-  recentDeliveries
+  recentDeliveries,
+  activeEvent = null
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Participant[]>([]);
@@ -79,7 +81,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const results = await api.searchParticipants(clean);
+        const results = await api.searchParticipants(clean, activeEvent ? activeEvent.$id : undefined);
         setSearchResults(results);
 
         // Se encontrou exatamente 1 resultado e o termo foi digitado por scanner ou busca exata
@@ -94,7 +96,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, activeEvent]);
 
   const selectAthlete = (athlete: Participant) => {
     setSelectedAthlete(athlete);
@@ -312,6 +314,11 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
                     {selectedAthlete.name}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-300">
+                    {selectedAthlete.event_name && (
+                      <span className="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30 font-semibold">
+                        🏆 {selectedAthlete.event_name}
+                      </span>
+                    )}
                     {selectedAthlete.cpf && (
                       <span className="flex items-center gap-1 font-mono">
                         <CreditCard className="w-3.5 h-3.5 text-slate-400" />

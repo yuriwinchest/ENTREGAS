@@ -6,7 +6,8 @@ import { LiveScreen } from "./components/LiveScreen";
 import { ParticipantsManager } from "./components/ParticipantsManager";
 import { SettingsModal } from "./components/SettingsModal";
 import { LoginScreen } from "./components/LoginScreen";
-import { Participant, EventSettings, DeliveryStats } from "./types";
+import { EventManagerModal } from "./components/EventManagerModal";
+import { Participant, EventSettings, DeliveryStats, EventItem } from "./types";
 import { api, client, auth, DATABASE_ID, COLLECTIONS } from "./lib/appwrite";
 import { Models } from "appwrite";
 import { Zap, Loader2 } from "lucide-react";
@@ -21,7 +22,12 @@ export function App() {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
   const [authChecking, setAuthChecking] = useState<boolean>(true);
 
-  // Estados Globais
+  // Estados Globais de Eventos / Tabelas
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);
+  const [isEventManagerOpen, setIsEventManagerOpen] = useState(false);
+
+  // Estados Globais de Dados
   const [stats, setStats] = useState<DeliveryStats>({
     total: 0,
     delivered: 0,
@@ -61,12 +67,32 @@ export function App() {
     }
   }, []);
 
-  // Carregar dados da nuvem
+  // Carregar lista de eventos / tabelas
+  const loadEvents = async () => {
+    try {
+      const list = await api.listEvents();
+      setEvents(list);
+      // Se não tem evento ativo e existem eventos cadastrados, ativa o primeiro mais recente
+      setActiveEvent((prev) => {
+        if (!prev && list.length > 0) return list[0];
+        if (prev) {
+          const updated = list.find((e) => e.$id === prev.$id);
+          return updated || null;
+        }
+        return null;
+      });
+    } catch (err) {
+      console.error("Erro ao carregar eventos:", err);
+    }
+  };
+
+  // Carregar dados da nuvem (estatísticas segregadas pelo evento ativo)
   const refreshData = async () => {
     try {
+      const activeId = activeEvent ? activeEvent.$id : undefined;
       const [s, rec, set] = await Promise.all([
-        api.getStats(),
-        api.getRecentDeliveries(10),
+        api.getStats(activeId),
+        api.getRecentDeliveries(10, activeId),
         api.getSettings()
       ]);
       setStats(s);
@@ -83,10 +109,13 @@ export function App() {
     // Sincroniza dados da nuvem apenas se houver usuário autenticado ou no modo Telão
     if (!user && currentTab !== "telao") return;
 
+    loadEvents();
     refreshData();
 
     // Polling inteligente a cada 4s para sincronização contínua
-    const interval = setInterval(refreshData, 4000);
+    const interval = setInterval(() => {
+      refreshData();
+    }, 4000);
 
     // Inscrição Realtime no Appwrite para push instantâneo
     try {
@@ -94,6 +123,7 @@ export function App() {
         `databases.${DATABASE_ID}.collections.${COLLECTIONS.PARTICIPANTS}.documents`,
         () => {
           refreshData();
+          loadEvents();
         }
       );
       return () => {
@@ -103,7 +133,7 @@ export function App() {
     } catch {
       return () => clearInterval(interval);
     }
-  }, [user, currentTab]);
+  }, [user, currentTab, activeEvent]);
 
   // Logout
   const handleLogout = async () => {
@@ -131,7 +161,7 @@ export function App() {
     return (
       <div className="relative">
         <LiveScreen
-          eventName={settings.event_name}
+          eventName={activeEvent ? activeEvent.name : settings.event_name}
           stats={stats}
           recentDeliveries={recentDeliveries}
           onExit={() => setCurrentTab("desk")}
@@ -160,18 +190,27 @@ export function App() {
       <Header
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
-        eventName={settings.event_name}
+        eventName={activeEvent ? activeEvent.name : settings.event_name}
         operatorName={operatorName}
         setOperatorName={setOperatorName}
         online={online}
         onLogout={handleLogout}
+        events={events}
+        activeEvent={activeEvent}
+        onSelectEvent={(ev) => {
+          setActiveEvent(ev);
+        }}
+        onOpenEventManager={() => setIsEventManagerOpen(true)}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Top KPIs Summary */}
-        <StatsCards stats={stats} />
+        {/* Top KPIs Summary (Segregados pelo Evento Ativo) */}
+        <StatsCards 
+          stats={stats} 
+          activeEventName={activeEvent ? activeEvent.name : null}
+        />
 
         {/* Tab Views */}
         {currentTab === "desk" && (
@@ -179,11 +218,20 @@ export function App() {
             operatorName={operatorName}
             onDeliveryComplete={refreshData}
             recentDeliveries={recentDeliveries}
+            activeEvent={activeEvent}
           />
         )}
 
         {currentTab === "participants" && (
-          <ParticipantsManager />
+          <ParticipantsManager
+            events={events}
+            activeEvent={activeEvent}
+            onSelectEvent={(ev) => setActiveEvent(ev)}
+            onRefreshEvents={() => {
+              loadEvents();
+              refreshData();
+            }}
+          />
         )}
 
         {currentTab === "settings" && (
@@ -195,9 +243,26 @@ export function App() {
 
       </main>
 
+      {/* Modal de Gestão de Eventos / Tabelas */}
+      {isEventManagerOpen && (
+        <EventManagerModal
+          events={events}
+          activeEventId={activeEvent?.$id || null}
+          onSelectEvent={(ev) => {
+            setActiveEvent(ev);
+            setIsEventManagerOpen(false);
+          }}
+          onRefreshEvents={() => {
+            loadEvents();
+            refreshData();
+          }}
+          onClose={() => setIsEventManagerOpen(false)}
+        />
+      )}
+
       {/* Footer */}
       <footer className="border-t border-slate-900 py-4 bg-navy-950 text-center text-xs text-slate-500 font-mono">
-        CHIPOWER Kits Cloud Platform • Operador: <strong className="text-slate-400">{operatorName}</strong> ({user.email}) • Sessão Ativa
+        CHIPOWER Kits Cloud Platform • Evento Ativo: <strong className="text-slate-300">{activeEvent ? activeEvent.name : "Visão Geral (Todos os Eventos)"}</strong> • Operador: <strong className="text-slate-400">{operatorName}</strong> ({user.email})
       </footer>
     </div>
   );

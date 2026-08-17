@@ -18,9 +18,12 @@ import {
   Shirt,
   CreditCard,
   QrCode,
-  Users
+  Users,
+  Lock,
+  PlusCircle,
+  Link as LinkIcon
 } from "lucide-react";
-import { Participant } from "../types";
+import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
 
 // Campos do Sistema disponíveis para mapeamento
@@ -63,13 +66,17 @@ const TARGET_FIELDS: TargetFieldOption[] = [
 interface ImportWizardModalProps {
   workbook: XLSX.WorkBook | null;
   fileName: string;
+  existingEvents?: EventItem[];
+  activeEventId?: string | null;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (event?: EventItem) => void;
 }
 
 export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
   workbook,
   fileName,
+  existingEvents = [],
+  activeEventId,
   onClose,
   onSuccess
 }) => {
@@ -80,6 +87,19 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
   const [columnMapping, setColumnMapping] = useState<{ [colIndex: number]: TargetField }>({});
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+
+  // Gestão de Identificação do Evento / Trava Obrigatória
+  const defaultEventName = fileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim();
+  const [eventMode, setEventMode] = useState<"new" | "existing">(existingEvents.length > 0 ? "new" : "new");
+  const [targetEventName, setTargetEventName] = useState<string>(defaultEventName || "Novo Evento");
+  const [targetEventDate, setTargetEventDate] = useState<string>(() => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, "0");
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy = today.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  });
+  const [selectedExistingId, setSelectedExistingId] = useState<string>(activeEventId || (existingEvents[0]?.$id || ""));
 
   // Inicializa a planilha ao carregar o arquivo
   useEffect(() => {
@@ -169,7 +189,7 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
 
   // Converte as linhas brutas nos objetos Participant usando o mapeamento configurado
   const mappedParticipants = useMemo(() => {
-    const results: Array<Omit<Participant, "$id" | "event_id">> = [];
+    const results: Array<Omit<Participant, "$id">> = [];
 
     dataRows.forEach((row, rowIdx) => {
       // Ignora linha se estiver completamente vazia
@@ -230,20 +250,64 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
     return results;
   }, [dataRows, columnMapping]);
 
+  // Validação do Evento (Trava de Segurança)
+  const isEventValid = useMemo(() => {
+    if (eventMode === "new") {
+      return targetEventName.trim().length > 0;
+    }
+    return Boolean(selectedExistingId);
+  }, [eventMode, targetEventName, selectedExistingId]);
+
   // Executa a importação em lote para o Appwrite Cloud
   const handleExecuteImport = async () => {
+    if (!isEventValid) {
+      alert("Por favor, preencha o Nome do Evento antes de importar.");
+      return;
+    }
+
     if (mappedParticipants.length === 0 || importing) return;
     setImporting(true);
     setImportProgress({ current: 0, total: mappedParticipants.length });
 
     try {
-      const res = await api.batchImportParticipants(mappedParticipants, (curr, tot) => {
-        setImportProgress({ current: curr, total: tot });
-      });
+      let finalEvent: EventItem;
+
+      // 1. Obter ou Criar o Evento no Appwrite
+      if (eventMode === "new") {
+        finalEvent = await api.createEvent({
+          name: targetEventName.trim(),
+          event_date: targetEventDate.trim() || undefined
+        });
+      } else {
+        const found = existingEvents.find((e) => e.$id === selectedExistingId);
+        if (found) {
+          finalEvent = found;
+        } else {
+          finalEvent = await api.createEvent({
+            name: targetEventName.trim(),
+            event_date: targetEventDate.trim() || undefined
+          });
+        }
+      }
+
+      // 2. Importação em lote ultra-rápida (com 25 workers concorrentes)
+      const res = await api.batchImportParticipants(
+        mappedParticipants,
+        finalEvent.$id,
+        finalEvent.name,
+        (curr, tot) => {
+          setImportProgress({ current: curr, total: tot });
+        }
+      );
 
       if (res.inserted > 0) {
-        alert(`Importação concluída com sucesso!\n✓ ${res.inserted} atletas cadastrados no Appwrite Cloud.\n${res.errors > 0 ? `! ${res.errors} registros não puderam ser gravados.` : ""}`);
-        onSuccess();
+        alert(
+          `Importação concluída com sucesso!\n\n` +
+          `🏆 Evento: ${finalEvent.name}\n` +
+          `✓ ${res.inserted} atletas vinculados e gravados com alta performance no Appwrite Cloud.\n` +
+          `${res.errors > 0 ? `⚠️ ${res.errors} registros tiveram alertas.` : ""}`
+        );
+        onSuccess(finalEvent);
       } else {
         alert(`Atenção: Nenhum atleta foi inserido (${res.errors} erros). Verifique a conexão ou os dados da planilha.`);
       }
@@ -271,13 +335,13 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
             </div>
             <div>
               <h3 className="text-xl font-bold text-white font-display flex items-center gap-2">
-                Importação de Atletas
+                Importação de Atletas por Evento
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
                   {fileName}
                 </span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Clique nos cabeçalhos das colunas para associar os dados aos campos do sistema.
+                Associe esta tabela a um evento específico para garantir a separação total dos dados e contagens.
               </p>
             </div>
           </div>
@@ -291,7 +355,108 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
           </button>
         </div>
 
-        {/* Barra de Controles: Abas de Planilhas e Linhas de Cabeçalho */}
+        {/* SEÇÃO 1: TRAVA OBRIGATÓRIA DE IDENTIFICAÇÃO DO EVENTO */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-brand-950/40 via-slate-900 to-slate-900 border border-brand-500/40 shrink-0 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-brand-400 flex items-center gap-1.5 font-mono">
+                <Lock className="w-3.5 h-3.5" /> 1. Identificação Obrigatória do Evento / Prova
+              </span>
+              <span className="text-[11px] px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-medium">
+                Segregação de Dados
+              </span>
+            </div>
+
+            {/* Alternar entre Novo Evento ou Existente */}
+            {existingEvents.length > 0 && (
+              <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-xl border border-slate-800 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setEventMode("new")}
+                  className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition-all ${
+                    eventMode === "new"
+                      ? "bg-brand-500 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <PlusCircle className="w-3.5 h-3.5" /> Criar Novo Evento
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEventMode("existing")}
+                  className={`px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 transition-all ${
+                    eventMode === "existing"
+                      ? "bg-brand-500 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <LinkIcon className="w-3.5 h-3.5" /> Vincular a Existente
+                </button>
+              </div>
+            )}
+          </div>
+
+          {eventMode === "new" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Nome do Evento / Tabela <span className="text-rose-400">* (Obrigatório)</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Meia Maratona de Verão 2026"
+                  value={targetEventName}
+                  onChange={(e) => setTargetEventName(e.target.value)}
+                  className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-sm text-white font-medium focus:outline-none transition-colors ${
+                    !targetEventName.trim()
+                      ? "border-rose-500 focus:border-rose-400 shadow-sm shadow-rose-500/20"
+                      : "border-slate-700 focus:border-brand-500"
+                  }`}
+                />
+                {!targetEventName.trim() && (
+                  <p className="text-[11px] text-rose-400 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Digite o nome do evento para desbloquear a importação.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Data da Prova / Evento
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 25/08/2026"
+                  value={targetEventDate}
+                  onChange={(e) => setTargetEventDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Selecione o Evento Existente <span className="text-rose-400">*</span>
+                </label>
+                <select
+                  value={selectedExistingId}
+                  onChange={(e) => setSelectedExistingId(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
+                >
+                  {existingEvents.map((ev) => (
+                    <option key={ev.$id} value={ev.$id}>
+                      {ev.name} {ev.event_date ? `(${ev.event_date})` : ""} - {ev.total_athletes || 0} atletas
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* SEÇÃO 2: Barra de Controles: Abas de Planilhas e Linhas de Cabeçalho */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 shrink-0">
           
           {/* Abas de Planilhas (ex: Planilha1, Planilha2) */}
@@ -318,77 +483,70 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
             </div>
           </div>
 
-          {/* Configuração da Linha de Cabeçalho */}
+          {/* Seletor da Linha de Cabeçalho */}
           <div className="flex items-center gap-3">
             <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-              Linha do cabeçalho:
+              <span>Linha do Cabeçalho:</span>
+              <input
+                type="number"
+                min={1}
+                max={Math.min(20, rawRows.length)}
+                value={headerRowIndex}
+                onChange={(e) => setHeaderRowIndex(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white text-center font-mono focus:border-brand-500 focus:outline-none"
+              />
             </label>
-            <input
-              type="number"
-              min={1}
-              max={Math.max(1, rawRows.length)}
-              value={headerRowIndex}
-              onChange={(e) => setHeaderRowIndex(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-16 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs font-bold text-center focus:border-brand-500 outline-none"
-            />
-            <span className="text-xs text-slate-400">
-              Total de linhas de dados: <strong className="text-brand-300">{dataRows.length}</strong>
+
+            <span className="text-xs text-slate-500 font-mono">
+              Total de Linhas: <strong className="text-slate-300">{dataRows.length}</strong>
             </span>
           </div>
         </div>
 
-        {/* ÁREA DA TABELA COM CABEÇALHOS INTERATIVOS DE SELEÇÃO */}
-        <div className="flex-1 overflow-auto rounded-2xl border border-slate-800 bg-slate-950/90 shadow-inner relative">
+        {/* Tabela Interativa de Mapeamento com Pré-visualização ao Vivo */}
+        <div className="flex-1 overflow-auto rounded-2xl border border-slate-800 bg-slate-950/60 shadow-inner relative min-h-[260px]">
           <table className="w-full text-left text-xs border-collapse">
-            
-            {/* Linha 1: Seletores Dropdown Interativos */}
-            <thead className="sticky top-0 z-20 bg-slate-900 border-b-2 border-slate-700 shadow-md">
+            <thead className="sticky top-0 z-20 bg-slate-900 border-b border-slate-700 shadow-md">
               <tr>
-                <th className="px-3 py-3 w-12 text-center text-slate-500 font-mono text-[10px] bg-slate-950 border-r border-slate-800">
+                <th className="p-3 text-center text-slate-500 font-mono w-14 border-r border-slate-800 bg-slate-900/90">
                   #
                 </th>
                 {columnHeaders.map((headerText, colIdx) => {
-                  const currentMapping = columnMapping[colIdx] || "ignore";
-                  const currentField = TARGET_FIELDS.find((f) => f.key === currentMapping);
-                  const isIgnored = currentMapping === "ignore";
+                  const currentFieldKey = columnMapping[colIdx] || "ignore";
+                  const currentField = TARGET_FIELDS.find((f) => f.key === currentFieldKey) || TARGET_FIELDS[0];
+                  const isIgnored = currentFieldKey === "ignore";
 
                   return (
                     <th
                       key={colIdx}
-                      className={`px-3 py-2.5 min-w-[150px] border-r border-slate-800 transition-colors ${
-                        isIgnored ? "bg-slate-900/90 text-slate-500" : "bg-slate-800/90"
+                      className={`p-3 min-w-[180px] max-w-[240px] border-r border-slate-800 align-top transition-colors ${
+                        isIgnored ? "bg-slate-950/80 text-slate-500 opacity-60" : "bg-slate-900"
                       }`}
                     >
-                      <div className="space-y-1.5">
-                        {/* Dropdown de Associação */}
-                        <div className="relative">
-                          <select
-                            value={currentMapping}
-                            onChange={(e) => {
-                              const newField = e.target.value as TargetField;
-                              setColumnMapping((prev) => ({ ...prev, [colIdx]: newField }));
-                            }}
-                            className={`w-full text-xs font-bold py-1.5 px-2 rounded-lg border appearance-none cursor-pointer transition-all pr-6 ${
-                              currentField?.color || "text-slate-400 bg-slate-800 border-slate-700"
-                            }`}
-                          >
-                            {TARGET_FIELDS.map((opt) => (
-                              <option key={opt.key} value={opt.key} className="bg-slate-900 text-slate-200">
-                                {opt.label}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            ▼
-                          </div>
-                        </div>
+                      {/* Nome original da coluna no Excel */}
+                      <div className="text-[11px] font-semibold text-slate-400 truncate mb-1.5 font-mono" title={headerText}>
+                        Coluna {colIdx + 1}: <span className="text-slate-200">{headerText}</span>
+                      </div>
 
-                        {/* Nome Original da Coluna no Arquivo */}
-                        <div className="flex items-center justify-between text-[11px] font-mono px-1">
-                          <span className={`truncate max-w-[130px] ${isIgnored ? "text-slate-500 line-through" : "text-slate-300 font-bold"}`} title={headerText}>
-                            {headerText}
-                          </span>
-                        </div>
+                      {/* Dropdown Seletor Interativo do Sistema */}
+                      <div className="relative">
+                        <select
+                          value={currentFieldKey}
+                          onChange={(e) => {
+                            const newTarget = e.target.value as TargetField;
+                            setColumnMapping((prev) => ({
+                              ...prev,
+                              [colIdx]: newTarget
+                            }));
+                          }}
+                          className={`w-full appearance-none rounded-xl text-xs font-bold px-3 py-2 border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/50 ${currentField.color}`}
+                        >
+                          {TARGET_FIELDS.map((opt) => (
+                            <option key={opt.key} value={opt.key} className="bg-slate-900 text-white py-1">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </th>
                   );
@@ -396,80 +554,63 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
               </tr>
             </thead>
 
-            {/* Corpo da Tabela: Linhas de Dados */}
-            <tbody className="divide-y divide-slate-800/60 font-sans">
-              {dataRows.length === 0 ? (
-                <tr>
-                  <td colSpan={columnHeaders.length + 1} className="text-center py-12 text-slate-500">
-                    Nenhuma linha de dados encontrada nesta planilha após o cabeçalho.
+            {/* Linhas de Dados de Pré-Visualização */}
+            <tbody className="divide-y divide-slate-800/50 font-mono">
+              {dataRows.slice(0, 15).map((row, rowIdx) => (
+                <tr key={rowIdx} className="hover:bg-slate-800/40 transition-colors">
+                  <td className="p-3 text-center text-slate-600 border-r border-slate-800/80 bg-slate-950/40 text-[11px]">
+                    {rowIdx + 1}
                   </td>
+                  {columnHeaders.map((_, colIdx) => {
+                    const isIgnored = (columnMapping[colIdx] || "ignore") === "ignore";
+                    const val = row[colIdx];
+                    return (
+                      <td
+                        key={colIdx}
+                        className={`p-3 border-r border-slate-800/60 truncate max-w-[240px] text-xs ${
+                          isIgnored ? "text-slate-600 bg-slate-950/60 line-through opacity-40" : "text-slate-200"
+                        }`}
+                        title={String(val || "")}
+                      >
+                        {val !== undefined && val !== null && String(val) !== "" ? String(val) : <span className="text-slate-700 italic">vazio</span>}
+                      </td>
+                    );
+                  })}
                 </tr>
-              ) : (
-                dataRows.slice(0, 50).map((row, rowIdx) => (
-                  <tr key={rowIdx} className="hover:bg-slate-800/40 transition-colors">
-                    {/* Número da Linha */}
-                    <td className="px-3 py-2 text-center text-slate-500 font-mono text-[10px] bg-slate-950/60 border-r border-slate-800">
-                      {rowIdx + 1}
-                    </td>
-
-                    {/* Células de Dados */}
-                    {columnHeaders.map((_, colIdx) => {
-                      const currentMapping = columnMapping[colIdx] || "ignore";
-                      const isIgnored = currentMapping === "ignore";
-                      const cellValue = row[colIdx];
-                      const displayVal = cellValue !== undefined && cellValue !== null ? String(cellValue) : "";
-
-                      return (
-                        <td
-                          key={colIdx}
-                          className={`px-3 py-2 border-r border-slate-800/60 truncate max-w-[180px] ${
-                            isIgnored 
-                              ? "bg-slate-950/40 text-slate-500" 
-                              : "text-slate-200 font-medium"
-                          }`}
-                          title={displayVal}
-                        >
-                          {currentMapping === "birth_date" ? formatBirthDate(cellValue) : displayVal}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Barra de Progresso durante a importação */}
+        {/* Barra de Progresso de Importação */}
         {importing && (
-          <div className="space-y-2 p-4 rounded-2xl bg-brand-950/40 border border-brand-500/30 animate-pulse shrink-0">
-            <div className="flex justify-between text-xs text-brand-300 font-bold">
-              <span>Importando atletas para o Appwrite Cloud...</span>
-              <span>
-                {importProgress.current} de {importProgress.total} ({Math.round((importProgress.current / (importProgress.total || 1)) * 100)}%)
+          <div className="p-4 rounded-2xl bg-brand-950/40 border border-brand-500/30 space-y-2 animate-fade-in shrink-0">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-brand-300 flex items-center gap-2 font-bold">
+                <RefreshCw className="w-4 h-4 animate-spin text-brand-400" />
+                Gravando com ultra-performance no Appwrite Cloud...
+              </span>
+              <span className="text-brand-400 font-bold">
+                {importProgress.current} / {importProgress.total} (
+                {Math.round((importProgress.current / (importProgress.total || 1)) * 100)}%)
               </span>
             </div>
             <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-brand-500 to-emerald-400 h-full rounded-full transition-all duration-300"
+              <div
+                className="bg-gradient-to-r from-brand-500 to-amber-400 h-full transition-all duration-150 rounded-full"
                 style={{ width: `${(importProgress.current / (importProgress.total || 1)) * 100}%` }}
               />
             </div>
           </div>
         )}
 
-        {/* Rodapé com Ações (Voltar, Importar, Cancelar) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="font-semibold">Resumo:</span>
-            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
-              {mappedParticipants.length} Atletas Mapeados
+        {/* Footer com Botões de Ação */}
+        <div className="flex items-center justify-between border-t border-slate-800 pt-4 shrink-0">
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <strong>{mappedParticipants.length}</strong> atletas prontos
             </span>
-            {dataRows.length > 50 && (
-              <span className="text-[11px] text-slate-500">
-                (Exibindo prévia das primeiras 50 linhas)
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -477,7 +618,7 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={importing}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold text-xs transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -485,18 +626,19 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
             <button
               type="button"
               onClick={handleExecuteImport}
-              disabled={importing || mappedParticipants.length === 0}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold text-xs shadow-lg shadow-brand-500/25 flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+              disabled={importing || mappedParticipants.length === 0 || !isEventValid}
+              title={!isEventValid ? "Preencha o Nome do Evento para continuar" : ""}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {importing ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Importando...</span>
+                  Importando...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Importar {mappedParticipants.length} Atletas</span>
+                  <ArrowRight className="w-4 h-4" />
+                  Importar {mappedParticipants.length} Atletas
                 </>
               )}
             </button>

@@ -1,3 +1,16 @@
+export interface EventItem {
+  $id: string;
+  name: string;
+  event_date?: string;
+  location?: string;
+  description?: string;
+  is_active?: boolean;
+  $createdAt?: string;
+  $updatedAt?: string;
+  total_athletes?: number;
+  delivered_athletes?: number;
+}
+
 export interface Participant {
   $id: string;
   $createdAt: string;
@@ -15,6 +28,8 @@ export interface Participant {
   qr_code?: string;
   delivered_at?: string | null;
   receiver_name?: string | null;
+  event_id?: string;
+  event_name?: string;
 }
 
 export interface DeliveryAudit {
@@ -41,4 +56,6 @@ export interface DeliveryStats {
   pending: number;
   percentage: number;
   deliveriesLastHour: number;
+  eventId?: string | null;
+  eventName?: string | null;
 }
