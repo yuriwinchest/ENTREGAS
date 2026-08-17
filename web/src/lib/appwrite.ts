@@ -292,27 +292,57 @@ export const api = {
   ): Promise<{ inserted: number; errors: number }> {
     let inserted = 0;
     let errors = 0;
+    const total = participantsList.length;
 
-    for (let i = 0; i < participantsList.length; i++) {
-      const p = participantsList[i];
+    const cleanStr = (val?: string | number | null, max = 250): string | null => {
+      if (val == null || val === "") return null;
+      const s = String(val).trim();
+      return s.length > max ? s.slice(0, max) : s;
+    };
+
+    const formatDate = (val?: any): string | null => {
+      if (val == null || val === "") return null;
+      if (typeof val === "number" && val > 10000 && val < 60000) {
+        const date = new Date((val - 25569) * 86400 * 1000);
+        const d = String(date.getUTCDate()).padStart(2, "0");
+        const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+        const y = date.getUTCFullYear();
+        return `${d}/${m}/${y}`;
+      }
+      const s = String(val).trim();
+      if (s.includes("T")) {
+        const parts = s.split("T")[0].split("-");
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return cleanStr(s, 30);
+    };
+
+    const CONCURRENCY = 6;
+    let completed = 0;
+
+    const processItem = async (p: typeof participantsList[0]) => {
       try {
-        const folded = normalizeFolded(p.name);
-        const qr = p.qr_code ? String(p.qr_code).trim() : String(p.bib_number).trim();
+        const bib = cleanStr(p.bib_number, 30) || "0";
+        const chip = (cleanStr(p.chip, 60) || bib).toUpperCase();
+        const name = (cleanStr(p.name, 250) || "ATLETA").toUpperCase();
+        const folded = normalizeFolded(name);
+        const qr = cleanStr(p.qr_code, 480) || bib;
+
         await databases.createDocument(
           DATABASE_ID,
           COLLECTIONS.PARTICIPANTS,
           "unique()",
           {
-            bib_number: String(p.bib_number).trim(),
-            chip: String(p.chip).trim().toUpperCase(),
-            name: String(p.name).trim().toUpperCase(),
+            bib_number: bib,
+            chip: chip,
+            name: name,
             name_folded: folded,
-            cpf: p.cpf ? String(p.cpf).trim() : null,
-            birth_date: p.birth_date ? String(p.birth_date).trim() : null,
-            sex: p.sex ? String(p.sex).trim().toUpperCase() : null,
-            shirt: p.shirt ? String(p.shirt).trim().toUpperCase() : null,
-            modality: p.modality ? String(p.modality).trim() : null,
-            category: p.category ? String(p.category).trim() : null,
+            cpf: cleanStr(p.cpf, 30),
+            birth_date: formatDate(p.birth_date),
+            sex: cleanStr(p.sex, 15)?.toUpperCase() || null,
+            shirt: cleanStr(p.shirt, 30)?.toUpperCase() || null,
+            modality: cleanStr(p.modality, 120),
+            category: cleanStr(p.category, 120),
             qr_code: qr,
             delivered_at: null,
             receiver_name: null
@@ -320,13 +350,19 @@ export const api = {
         );
         inserted++;
       } catch (err) {
-        console.warn(`Erro ao importar ${p.name}:`, err);
+        console.warn(`Erro ao importar ${p.name} (#${p.bib_number}):`, err);
         errors++;
+      } finally {
+        completed++;
+        if (onProgress) {
+          onProgress(completed, total);
+        }
       }
+    };
 
-      if (onProgress) {
-        onProgress(i + 1, participantsList.length);
-      }
+    for (let i = 0; i < participantsList.length; i += CONCURRENCY) {
+      const chunk = participantsList.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map((item) => processItem(item)));
     }
 
     return { inserted, errors };

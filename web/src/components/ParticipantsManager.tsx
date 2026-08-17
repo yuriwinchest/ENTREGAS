@@ -85,15 +85,36 @@ export const ParticipantsManager: React.FC = () => {
     reader.onload = (evt) => {
       try {
         const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: "binary" });
+        const wb = XLSX.read(bstr, { type: "binary", cellDates: true });
         const wsName = wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
-        const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
+        const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { 
+          defval: "",
+          raw: false,
+          dateNF: "dd/mm/yyyy"
+        });
 
         if (rawData.length === 0) {
           alert("Arquivo vazio ou sem dados legíveis.");
           return;
         }
+
+        const formatBirthDate = (val: any): string => {
+          if (!val) return "";
+          if (typeof val === "number" && val > 10000 && val < 60000) {
+            const date = new Date((val - 25569) * 86400 * 1000);
+            const d = String(date.getUTCDate()).padStart(2, "0");
+            const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+            const y = date.getUTCFullYear();
+            return `${d}/${m}/${y}`;
+          }
+          const s = String(val).trim();
+          if (s.includes("T")) {
+            const parts = s.split("T")[0].split("-");
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+          return s.slice(0, 30);
+        };
 
         // Mapeamento inteligente e padronizado de colunas
         const mapped = rawData.map((row, idx) => {
@@ -104,31 +125,32 @@ export const ParticipantsManager: React.FC = () => {
           };
 
           // 1. Numero
-          const bib = findVal(["num", "peito", "dorsal", "bib", "numero"]) || String(idx + 1000);
+          const bib = findVal(["num", "peito", "dorsal", "bib", "numero", "inscricao", "inscrição"]) || String(idx + 1001);
           
           // 2. Chip
           const chip = (findVal(["chip", "epc", "rfid", "tag", "transponder"]) || bib).toUpperCase();
           
           // 3. Nome
-          const name = (findVal(["nome", "atleta", "participante", "name", "runner"]) || "ATLETA").toUpperCase();
+          const name = (findVal(["nome", "atleta", "participante", "name", "runner", "cliente"]) || `ATLETA ${bib}`).toUpperCase();
           
           // 4. Nascimento
-          const birth = findVal(["nasc", "data", "birth", "aniversario", "dt_nasc", "nascimento"]);
+          const rawBirth = findVal(["nasc", "data", "birth", "aniversario", "dt_nasc", "nascimento", "dt."]);
+          const birth = formatBirthDate(rawBirth);
           
           // 5. Modalidade
-          const modality = findVal(["modalidade", "percurso", "distancia", "corrida", "prova", "modality"]) || "Geral";
+          const modality = findVal(["modalidade", "percurso", "distancia", "distância", "corrida", "prova", "modality", "tipo"]) || "Geral";
           
           // 6. Camisa
-          const shirt = (findVal(["camisa", "camiseta", "tamanho", "shirt", "tam_camisa", "tam"]) || "M").toUpperCase();
+          const shirt = (findVal(["camisa", "camiseta", "tamanho", "shirt", "tam_camisa", "tam", "tam."]) || "M").toUpperCase();
           
           // 7. Cpf
-          const cpf = findVal(["cpf", "documento", "doc", "identidade"]);
+          const cpf = findVal(["cpf", "documento", "doc", "identidade", "rg", "doc."]);
           
           // 8. Qr code
-          const qr = findVal(["qr", "qrcode", "qr_code", "voucher", "codigo_qr", "chave"]) || bib;
+          const qr = findVal(["qr", "qrcode", "qr_code", "voucher", "codigo_qr", "chave", "código"]) || bib;
 
-          const category = findVal(["categoria", "faixa", "cat"]) || "Geral";
-          const sex = (findVal(["sexo", "genero", "sex"]) || "M").toUpperCase().substring(0, 1);
+          const category = findVal(["categoria", "faixa", "cat", "faixa etaria", "faixa etária"]) || "Geral";
+          const sex = (findVal(["sexo", "genero", "gênero", "sex"]) || "M").toUpperCase().substring(0, 1);
 
           return {
             bib_number: bib,
@@ -164,14 +186,18 @@ export const ParticipantsManager: React.FC = () => {
         setImportProgress({ current: curr, total: tot });
       });
 
-      alert(`Importação concluída com sucesso!\n✓ ${res.inserted} atletas cadastrados no Appwrite.\n${res.errors > 0 ? `! ${res.errors} registros com aviso de importação.` : ""}`);
-      setIsImportModalOpen(false);
-      setImportPreview([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      loadData();
-    } catch (err) {
+      if (res.inserted > 0) {
+        alert(`Importação concluída com sucesso!\n✓ ${res.inserted} atletas cadastrados no Appwrite Cloud.\n${res.errors > 0 ? `! ${res.errors} registros não puderam ser gravados.` : ""}`);
+        setIsImportModalOpen(false);
+        setImportPreview([]);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        loadData();
+      } else {
+        alert(`Atenção: Nenhum atleta foi inserido (${res.errors} erros). Verifique a conexão ou os dados da planilha.`);
+      }
+    } catch (err: any) {
       console.error("Falha na importação:", err);
-      alert("Erro ao importar para a nuvem. Verifique o console.");
+      alert(`Erro ao importar para a nuvem: ${err?.message || "Falha de comunicação com o banco de dados."}`);
     } finally {
       setImporting(false);
     }
