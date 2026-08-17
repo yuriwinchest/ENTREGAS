@@ -15,13 +15,15 @@ import {
   Sparkles,
   History,
   X,
-  QrCode
+  QrCode,
+  Printer
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Participant } from "../types";
 import { api } from "../lib/appwrite";
 import { sounds } from "../lib/audio";
 import { QRCodeModal } from "./QRCodeModal";
+import { DeliveryReceiptModal } from "./DeliveryReceiptModal";
 
 interface DeliveryDeskProps {
   operatorName: string;
@@ -43,6 +45,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
   const [delivering, setDelivering] = useState(false);
   const [lastDelivered, setLastDelivered] = useState<Participant | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [receiptAthlete, setReceiptAthlete] = useState<Participant | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,6 +142,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
         });
 
         setLastDelivered(res.participant);
+        setReceiptAthlete(res.participant);
         onDeliveryComplete();
         clearSelection();
       }
@@ -253,19 +257,30 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
             
             {/* Status Alert Banner */}
             {selectedAthlete.delivered_at ? (
-              <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-500/40 mb-6 flex items-start gap-3 text-rose-200">
-                <AlertTriangle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5 animate-bounce" />
-                <div>
-                  <h4 className="font-bold text-base text-rose-300">
-                    ATENÇÃO: ESTE KIT JÁ FOI ENTREGUE!
-                  </h4>
-                  <p className="text-xs sm:text-sm text-rose-200/90 mt-1">
-                    Entregue em: <strong className="font-mono text-white">{new Date(selectedAthlete.delivered_at).toLocaleString("pt-BR")}</strong>
-                  </p>
-                  <p className="text-xs text-rose-300/80 mt-0.5">
-                    Retirado por: <strong className="text-white">{selectedAthlete.receiver_name || "Não informado"}</strong>
-                  </p>
+              <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-500/40 mb-6 flex items-start justify-between gap-3 text-rose-200">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5 animate-bounce" />
+                  <div>
+                    <h4 className="font-bold text-base text-rose-300">
+                      ATENÇÃO: ESTE KIT JÁ FOI ENTREGUE!
+                    </h4>
+                    <p className="text-xs sm:text-sm text-rose-200/90 mt-1">
+                      Entregue em: <strong className="font-mono text-white">{new Date(selectedAthlete.delivered_at).toLocaleString("pt-BR")}</strong>
+                    </p>
+                    <p className="text-xs text-rose-300/80 mt-0.5">
+                      Retirado por: <strong className="text-white">{selectedAthlete.receiver_name || "Não informado"}</strong>
+                    </p>
+                  </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setReceiptAthlete(selectedAthlete)}
+                  className="px-3.5 py-2 rounded-xl bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-lg shadow-rose-900/40"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimir Comprovante</span>
+                </button>
               </div>
             ) : (
               <div className="p-3.5 rounded-xl bg-emerald-950/50 border border-emerald-500/30 mb-6 flex items-center justify-between text-emerald-200">
@@ -493,7 +508,18 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
                 </span>
               </div>
             </div>
-            <Sparkles className="w-5 h-5 text-amber-400 animate-spin" />
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setReceiptAthlete(lastDelivered)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Imprimir Recibo</span>
+              </button>
+              <Sparkles className="w-5 h-5 text-amber-400 animate-spin" />
+            </div>
           </div>
         )}
 
@@ -525,7 +551,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
                       {delivery.bib_number}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-[160px]">
+                      <p className="text-xs font-bold text-white truncate max-w-[130px] sm:max-w-[150px]">
                         {delivery.name}
                       </p>
                       <p className="text-[10px] text-slate-400 truncate">
@@ -534,13 +560,23 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] font-mono text-slate-400 block">
-                      {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
-                    </span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-medium">
-                      OK
-                    </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setReceiptAthlete(delivery)}
+                      title="Imprimir Comprovante de Retirada"
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-slate-400 block">
+                        {delivery.delivered_at ? new Date(delivery.delivered_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-medium">
+                        OK
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -554,6 +590,15 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
         <QRCodeModal
           athlete={selectedAthlete}
           onClose={() => setIsQrModalOpen(false)}
+        />
+      )}
+
+      {/* Modal de Comprovante / Recibo de Entrega */}
+      {receiptAthlete && (
+        <DeliveryReceiptModal
+          athlete={receiptAthlete}
+          operatorName={operatorName}
+          onClose={() => setReceiptAthlete(null)}
         />
       )}
 
