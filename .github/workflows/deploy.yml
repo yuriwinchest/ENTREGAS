@@ -1,29 +1,30 @@
-name: CI/CD Push Deploy CHIPOWER
+name: CI/CD Deploy CHIPOWER
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout do Código
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install and Build Frontend
+      - name: Validar Build de Produção
         working-directory: web
         run: |
           npm install
           npm run build
 
-      - name: Deploy to VPS via SSH
+      - name: Deploy Automático na VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 179.198.97.28
@@ -31,23 +32,23 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD || 'Yuri@20262026' }}
           port: 22
           script: |
-            echo "=== INICIANDO DEPLOY CHIPOWER NA VPS ==="
+            echo "=== INICIANDO DEPLOY AUTOMÁTICO CHIPOWER NA VPS ==="
             mkdir -p /opt/chipower-entregas
             cd /opt/chipower-entregas
 
-            # Clonar ou puxar atualizações do repositório
+            # Atualizar repositório local na VPS
             if [ -d ".git" ]; then
               git fetch origin main
               git reset --hard origin/main
-            else
-              git clone https://yuriwinchest:${{ secrets.GH_PAT }}@github.com/yuriwinchest/ENTREGAS.git .
             fi
 
-            # Build e Restart do Container Docker
-            echo "Subindo containers Docker..."
+            # Build e Reinicialização dos Containers Docker
             docker compose down --remove-orphans || true
+            docker rm -f chipower-web || true
             docker compose build --no-cache
+            docker rm -f chipower-web || true
             docker compose up -d
 
-            echo "=== DEPLOY EXECUTADO COM SUCESSO! ==="
+            echo "=== DEPLOY CONCLUÍDO COM SUCESSO! ==="
             docker ps | grep chipower
+
