@@ -250,6 +250,139 @@ export const api = {
     }
   },
 
+  async updateParticipant(id: string, data: Partial<Participant>): Promise<Participant> {
+    const cleanData: Record<string, any> = {};
+    if (data.bib_number !== undefined) cleanData.bib_number = String(data.bib_number).trim().slice(0, 30);
+    if (data.chip !== undefined) cleanData.chip = String(data.chip).trim().toUpperCase().slice(0, 60);
+    if (data.name !== undefined) {
+      cleanData.name = String(data.name).trim().toUpperCase().slice(0, 250);
+      cleanData.name_folded = normalizeFolded(cleanData.name);
+    }
+    if (data.cpf !== undefined) cleanData.cpf = data.cpf ? String(data.cpf).trim().slice(0, 30) : null;
+    if (data.birth_date !== undefined) cleanData.birth_date = data.birth_date ? String(data.birth_date).trim().slice(0, 30) : null;
+    if (data.sex !== undefined) cleanData.sex = data.sex ? String(data.sex).trim().toUpperCase().slice(0, 15) : null;
+    if (data.shirt !== undefined) cleanData.shirt = data.shirt ? String(data.shirt).trim().toUpperCase().slice(0, 30) : null;
+    if (data.modality !== undefined) cleanData.modality = data.modality ? String(data.modality).trim().slice(0, 120) : null;
+    if (data.category !== undefined) cleanData.category = data.category ? String(data.category).trim().slice(0, 120) : null;
+    if (data.qr_code !== undefined) cleanData.qr_code = data.qr_code ? String(data.qr_code).trim().slice(0, 480) : null;
+    if (data.delivered_at !== undefined) cleanData.delivered_at = data.delivered_at;
+    if (data.receiver_name !== undefined) cleanData.receiver_name = data.receiver_name;
+
+    return await databases.updateDocument<Participant>(
+      DATABASE_ID,
+      COLLECTIONS.PARTICIPANTS,
+      id,
+      cleanData
+    );
+  },
+
+  async deleteParticipant(id: string): Promise<boolean> {
+    try {
+      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PARTICIPANTS, id);
+      return true;
+    } catch (err) {
+      console.error("Erro ao excluir participante:", err);
+      return false;
+    }
+  },
+
+  async deleteAllParticipants(
+    onProgress?: (current: number, total: number) => void
+  ): Promise<{ deleted: number; errors: number }> {
+    let deleted = 0;
+    let errors = 0;
+    const CONCURRENCY = 8;
+
+    try {
+      const initialRes = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
+        Query.limit(1)
+      ]);
+      const initialTotal = initialRes.total;
+      if (initialTotal === 0) return { deleted: 0, errors: 0 };
+
+      let hasMore = true;
+      while (hasMore) {
+        const batch = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
+          Query.limit(100)
+        ]);
+
+        if (batch.documents.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        const deleteItem = async (doc: any) => {
+          try {
+            await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PARTICIPANTS, doc.$id);
+            deleted++;
+          } catch (e) {
+            console.warn("Erro ao deletar documento:", doc.$id, e);
+            errors++;
+          }
+          if (onProgress) {
+            onProgress(deleted + errors, initialTotal);
+          }
+        };
+
+        for (let i = 0; i < batch.documents.length; i += CONCURRENCY) {
+          const chunk = batch.documents.slice(i, i + CONCURRENCY);
+          await Promise.all(chunk.map(deleteItem));
+        }
+
+        if (batch.documents.length < 100) {
+          hasMore = false;
+        }
+      }
+    } catch (err) {
+      console.error("Erro no processo de limpeza de base:", err);
+    }
+
+    return { deleted, errors };
+  },
+
+  async resetAllDeliveries(
+    onProgress?: (current: number, total: number) => void
+  ): Promise<{ reset: number; errors: number }> {
+    let reset = 0;
+    let errors = 0;
+    const CONCURRENCY = 8;
+
+    try {
+      const deliveredDocs = await databases.listDocuments<Participant>(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
+        Query.isNotNull("delivered_at"),
+        Query.limit(5000)
+      ]);
+
+      const total = deliveredDocs.documents.length;
+      if (total === 0) return { reset: 0, errors: 0 };
+
+      const resetItem = async (p: Participant) => {
+        try {
+          await databases.updateDocument(DATABASE_ID, COLLECTIONS.PARTICIPANTS, p.$id, {
+            delivered_at: null,
+            receiver_name: null
+          });
+          reset++;
+        } catch (e) {
+          console.warn("Erro ao resetar entrega do atleta:", p.$id, e);
+          errors++;
+        }
+        if (onProgress) {
+          onProgress(reset + errors, total);
+        }
+      };
+
+      for (let i = 0; i < deliveredDocs.documents.length; i += CONCURRENCY) {
+        const chunk = deliveredDocs.documents.slice(i, i + CONCURRENCY);
+        await Promise.all(chunk.map(resetItem));
+      }
+    } catch (err) {
+      console.error("Erro ao resetar entregas:", err);
+    }
+
+    return { reset, errors };
+  },
+
   // 2. Configurações
   async getSettings(): Promise<EventSettings> {
     try {
