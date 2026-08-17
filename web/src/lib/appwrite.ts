@@ -1,4 +1,4 @@
-import { Client, Databases, Query } from "appwrite";
+import { Client, Databases, Account, Query, Models } from "appwrite";
 import { Participant, DeliveryAudit, EventSettings, DeliveryStats } from "../types";
 
 export const APPWRITE_ENDPOINT = "https://db.largadabrasil.com/v1";
@@ -16,6 +16,33 @@ export const client = new Client()
   .setProject(APPWRITE_PROJECT_ID);
 
 export const databases = new Databases(client);
+export const account = new Account(client);
+
+export const auth = {
+  async login(email: string, password: string): Promise<Models.Session> {
+    // Se houver uma sessão antiga ativa, encerra primeiro
+    try {
+      await account.deleteSession("current");
+    } catch {}
+    return await account.createEmailPasswordSession(email, password);
+  },
+
+  async getCurrentUser(): Promise<Models.User<Models.Preferences> | null> {
+    try {
+      return await account.get();
+    } catch {
+      return null;
+    }
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await account.deleteSession("current");
+    } catch (e) {
+      console.warn("Erro ao encerrar sessão:", e);
+    }
+  }
+};
 
 // Normalização de string para busca sem acentos
 export function normalizeFolded(str: string): string {

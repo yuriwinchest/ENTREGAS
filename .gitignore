@@ -31,7 +31,8 @@ Thumbs.db
 .qa/
 *.zip
 installer/EntregaDeKits.Installer/rsrc_windows_amd64.syso
-tools/rcedit-x64.exe
+tools/*.exe
+tools/*.mjs
 
 # Antigravity & Scratch
 .agents/

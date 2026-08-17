@@ -5,14 +5,21 @@ import { DeliveryDesk } from "./components/DeliveryDesk";
 import { LiveScreen } from "./components/LiveScreen";
 import { ParticipantsManager } from "./components/ParticipantsManager";
 import { SettingsModal } from "./components/SettingsModal";
+import { LoginScreen } from "./components/LoginScreen";
 import { Participant, EventSettings, DeliveryStats } from "./types";
-import { api, client, DATABASE_ID, COLLECTIONS } from "./lib/appwrite";
+import { api, client, auth, DATABASE_ID, COLLECTIONS } from "./lib/appwrite";
+import { Models } from "appwrite";
+import { Zap, Loader2 } from "lucide-react";
 
 export function App() {
   // Roteamento simples por tab ou path
   const [currentTab, setCurrentTab] = useState<"desk" | "telao" | "participants" | "settings">("desk");
-  const [operatorName, setOperatorName] = useState<string>("Balcão 1");
+  const [operatorName, setOperatorName] = useState<string>("Aline Pedrosa");
   const [online, setOnline] = useState<boolean>(true);
+  
+  // Estado de Autenticação
+  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+  const [authChecking, setAuthChecking] = useState<boolean>(true);
 
   // Estados Globais
   const [stats, setStats] = useState<DeliveryStats>({
@@ -31,17 +38,30 @@ export function App() {
     active: true
   });
 
-  // Carregar operador do localStorage e checar rota /telao
+  // Verificar sessão inicial no Appwrite
   useEffect(() => {
-    const saved = localStorage.getItem("chipower_operator");
-    if (saved) setOperatorName(saved);
+    const checkInitialSession = async () => {
+      try {
+        const currentUser = await auth.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          setOperatorName(currentUser.name || "Aline Pedrosa");
+        }
+      } catch (err) {
+        console.warn("Sem sessão prévia:", err);
+      } finally {
+        setAuthChecking(false);
+      }
+    };
+
+    checkInitialSession();
 
     if (window.location.pathname.includes("/telao") || window.location.hash.includes("telao")) {
       setCurrentTab("telao");
     }
   }, []);
 
-  // Carregar dados iniciais
+  // Carregar dados da nuvem
   const refreshData = async () => {
     try {
       const [s, rec, set] = await Promise.all([
@@ -82,7 +102,28 @@ export function App() {
     }
   }, []);
 
-  // Telão TV Fullscreen
+  // Logout
+  const handleLogout = async () => {
+    await auth.logout();
+    setUser(null);
+  };
+
+  // Carregamento Inicial de Sessão
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-navy-950 flex flex-col items-center justify-center font-sans">
+        <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-2xl shadow-brand-500/30 mb-4 animate-pulse">
+          <Zap className="w-9 h-9 text-white fill-white" />
+        </div>
+        <div className="flex items-center gap-2 text-brand-400 font-mono text-sm">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Iniciando CHIPOWER Cloud...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Telão TV Fullscreen (Acessível logado ou diretamente pelo Telão)
   if (currentTab === "telao") {
     return (
       <div className="relative">
@@ -96,6 +137,20 @@ export function App() {
     );
   }
 
+  // Se não estiver logado, exibe a Tela de Login
+  if (!user) {
+    return (
+      <LoginScreen
+        onLoginSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          setOperatorName(loggedUser.name || "Aline Pedrosa");
+        }}
+        onOpenTelao={() => setCurrentTab("telao")}
+      />
+    );
+  }
+
+  // Painel Principal Operacional Autenticado
   return (
     <div className="min-h-screen bg-navy-950 text-slate-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
       {/* Top Header */}
@@ -106,6 +161,7 @@ export function App() {
         operatorName={operatorName}
         setOperatorName={setOperatorName}
         online={online}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
@@ -138,7 +194,7 @@ export function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-900 py-4 bg-navy-950 text-center text-xs text-slate-500 font-mono">
-        CHIPOWER Kits Cloud Platform • Sincronização Segura Appwrite • Powered by CHIPOWER Engine
+        CHIPOWER Kits Cloud Platform • Operador: <strong className="text-slate-400">{operatorName}</strong> ({user.email}) • Sessão Ativa
       </footer>
     </div>
   );

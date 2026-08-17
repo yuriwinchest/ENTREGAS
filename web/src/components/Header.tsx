@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { 
   Zap, 
   Tv, 
@@ -7,7 +6,8 @@ import {
   Radio, 
   UserCheck, 
   Clock, 
-  Layers
+  Layers,
+  LogOut
 } from "lucide-react";
 
 interface HeaderProps {
@@ -17,6 +17,7 @@ interface HeaderProps {
   operatorName: string;
   setOperatorName: (name: string) => void;
   online: boolean;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,7 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
   eventName,
   operatorName,
   setOperatorName,
-  online
+  online,
+  onLogout
 }) => {
   const [time, setTime] = useState<string>("");
   const [isEditingOperator, setIsEditingOperator] = useState(false);
@@ -184,6 +186,18 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Sair / Trocar de Conta"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500/40 hover:bg-rose-950/30 text-slate-400 hover:text-rose-300 transition-all text-xs"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline font-semibold">Sair</span>
+              </button>
+            )}
 
           </div>
         </div>
