@@ -1,0 +1,39 @@
+ENTREGA DE KITS CHIPOWER 0.3.3 - HOMOLOGAÇÃO
+================================================
+
+ATENÇÃO
+Esta é uma versão de homologação. Não utilize esta versão em prova oficial
+antes do teste físico com a maleta, o R420 e o telão reais.
+
+O QUE VOCÊ RECEBEU
+- Um único arquivo Windows: INSTALAR-Entrega-de-Kits-CHIPOWER-v0.3.3-homologacao.exe
+- Abra com dois cliques. Não é necessário instalar o .NET nem procurar outros arquivos.
+- Três abas: Entrega de Kits, Entregues e Leitor RFID.
+- Entrega pelo titular ou por terceiro (grava o nome de quem retirou).
+- Faixa do percurso: quantos kits já saíram e quantos faltam.
+- Telão em tela cheia. CPF e data de nascimento não aparecem no telão.
+
+COMO OPERAR
+1. Abra o instalador com dois cliques e espere o sistema abrir.
+2. Aba Entrega de Kits: Anexar arquivo (Excel, TXT, XML ou PDF da lista do evento).
+3. Confirme o aviso de substituição da lista somente se estiver no evento correto.
+4. Digite o nome do corredor, abra a ficha e use Confirmar entrega.
+   Se outra pessoa for retirar, use Entrega de terceiro e informe o nome de quem leva.
+5. Aba Entregues: confira quem já retirou o kit.
+6. Aba Leitor RFID: o telão abre sozinho. Quem passa no chip aparece como
+   KIT ENTREGUE (já retirou) ou KIT NÃO ENTREGUE (ainda não retirou).
+7. Sem a maleta, use Simular leitura com um CHIP da lista.
+
+TESTE COM A MALETA R420
+1. Feche totalmente o ShipRed. O R420 aceita somente um cliente LLRP.
+2. Confirme o IP 192.168.0.33 e as antenas 1 a 4.
+3. Use Iniciar R420 e leia um CHIP conhecido da lista.
+4. Confira o telão: entregue ou não entregue, conforme a aba Entregues.
+
+GATE OBRIGATÓRIO
+A versão só poderá ser considerada pronta para uso oficial depois da validação
+física com o computador, a maleta, o R420, as antenas, um CHIP conhecido e o telão.
+
+PRIVACIDADE
+A lista de inscritos não vai dentro do instalador. CPF e nascimento ficam só
+na base local do computador do evento.

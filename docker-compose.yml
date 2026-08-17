@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  chipower-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chipower-web
+    restart: always
+    ports:
+      - "3080:80"
+    environment:
+      - NODE_ENV=production

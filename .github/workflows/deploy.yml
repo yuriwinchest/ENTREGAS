@@ -1,0 +1,53 @@
+name: CI/CD Push Deploy CHIPOWER
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install and Build Frontend
+        working-directory: web
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 179.198.97.28
+          username: root
+          password: ${{ secrets.VPS_PASSWORD || 'Yuri@20262026' }}
+          port: 22
+          script: |
+            echo "=== INICIANDO DEPLOY CHIPOWER NA VPS ==="
+            mkdir -p /opt/chipower-entregas
+            cd /opt/chipower-entregas
+
+            # Clonar ou puxar atualizações do repositório
+            if [ -d ".git" ]; then
+              git fetch origin main
+              git reset --hard origin/main
+            else
+              git clone https://yuriwinchest:${{ secrets.GH_PAT }}@github.com/yuriwinchest/ENTREGAS.git .
+            fi
+
+            # Build e Restart do Container Docker
+            echo "Subindo containers Docker..."
+            docker compose down --remove-orphans || true
+            docker compose build --no-cache
+            docker compose up -d
+
+            echo "=== DEPLOY EXECUTADO COM SUCESSO! ==="
+            docker ps | grep chipower

@@ -1,0 +1,249 @@
+<Window x:Class="EntregaDeKits.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="CHIPOWER | Entrega de Kits" Icon="pack://application:,,,/Resources/chipower.ico" Height="820" Width="1280" MinHeight="520" MinWidth="820" WindowStartupLocation="CenterScreen" Background="{StaticResource Canvas}">
+  <Grid>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Border Grid.Row="0" Background="{StaticResource HeaderFill}" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="16,8">
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Rectangle Width="6" Height="22" Fill="{StaticResource Orange}" Margin="0,0,8,0"/>
+          <TextBlock Text="CENTRAL DE ENTREGA" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource InkText}" VerticalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+          <Button Content="Abrir telão" Click="OpenPresentation_Click" Margin="0,0,6,0" Padding="12,6" MinHeight="32"/>
+          <Button Content="Escolher fundo" Click="Background_Click" Margin="0,0,10,0" Padding="12,6" MinHeight="32"/>
+          <Image Source="pack://application:,,,/Resources/chipower-claro.jpeg" Height="32" Width="104" Stretch="Uniform"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <TabControl x:Name="MainTabs" Grid.Row="1" Margin="12,8,12,6" SelectedIndex="0" SelectionChanged="MainTabs_SelectionChanged">
+      <TabItem Header="ENTREGA DE KITS">
+        <Grid Margin="2,8,2,2">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Button Content="Anexar arquivo" Click="AttachList_Click" Style="{StaticResource OrangeButton}" MinWidth="140" Margin="0,0,10,0"/>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock x:Name="AttachedFileText" Text="Anexe o arquivo dos corredores (TXT, XML, PDF ou Excel)." Foreground="{StaticResource InkText}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+              <TextBlock x:Name="DeliveryImportReportText" Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+          </Grid>
+          <Border Grid.Row="1" Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="12,8" Margin="0,0,0,6">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="JÁ SAÍRAM" Foreground="{StaticResource Muted}" FontWeight="Bold" FontSize="10"/>
+                <TextBlock x:Name="StatDelivered" Text="0" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Orange}"/>
+              </StackPanel>
+              <Grid Grid.Column="2" VerticalAlignment="Center">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <DockPanel>
+                  <TextBlock x:Name="StatPercent" DockPanel.Dock="Right" Text="0%" FontWeight="Bold" Foreground="{StaticResource InkText}"/>
+                  <TextBlock Text="PERCURSO DA ENTREGA" Foreground="{StaticResource Muted}" FontWeight="Bold" FontSize="10"/>
+                </DockPanel>
+                <Border Grid.Row="1" Height="14" CornerRadius="7" Background="#F0D7B6" BorderBrush="{StaticResource Line}" BorderThickness="1" Margin="0,4,0,0" ClipToBounds="True">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition x:Name="DeliveredShare" Width="0.001*"/>
+                      <ColumnDefinition x:Name="RemainingShare" Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{StaticResource Orange}" CornerRadius="7,0,0,7"/>
+                  </Grid>
+                </Border>
+              </Grid>
+              <StackPanel Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <TextBlock Text="AINDA NA FILA" Foreground="{StaticResource Muted}" FontWeight="Bold" FontSize="10" HorizontalAlignment="Right"/>
+                <TextBlock x:Name="StatRemaining" Text="0" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource InkText}" HorizontalAlignment="Right"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="1.15*" MinWidth="380"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*" MinWidth="360"/></Grid.ColumnDefinitions>
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="12">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <TextBlock x:Name="RunnerListTitle" Text="CORREDORES" Foreground="{StaticResource Orange}" FontWeight="Bold" FontSize="12"/>
+                <Grid Grid.Row="1" Margin="0,8,0,8">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <TextBox x:Name="NameSearchBox" VerticalContentAlignment="Center" ToolTip="Digite o nome: a lista filtra a cada letra" TextChanged="NameSearch_TextChanged"/>
+                  <Button Grid.Column="1" Content="Limpar" Click="ClearSearch_Click" Margin="8,0,0,8"/>
+                </Grid>
+                <ListBox x:Name="SearchResults" Grid.Row="2" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="SearchResults_SelectionChanged">
+                  <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                      <Setter Property="MinHeight" Value="52"/>
+                      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    </Style>
+                  </ListBox.ItemContainerStyle>
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <Grid Margin="8,4">
+                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Row="1" Foreground="{StaticResource Muted}" FontSize="13" Text="{Binding ListDetail}"/>
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <Grid Grid.Row="3" Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <Button x:Name="PrevPageButton" Content="Anterior" Click="PrevPage_Click" MinWidth="96" Margin="0,0,8,0"/>
+                  <TextBlock x:Name="PageLabel" Grid.Column="1" Text="Página 1 de 1" Foreground="{StaticResource InkText}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                  <Button x:Name="NextPageButton" Grid.Column="2" Content="Próxima" Click="NextPage_Click" Style="{StaticResource OrangeButton}" MinWidth="96" Margin="8,0,0,0"/>
+                </Grid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="6"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*" MinHeight="160"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Background="{StaticResource Orange}" CornerRadius="3,3,0,0"/>
+                <DockPanel Grid.Row="1" Margin="14,8,14,6">
+                  <TextBlock x:Name="RunnerNumberText" DockPanel.Dock="Right" Text="Nº —" FontFamily="{StaticResource DisplayFont}" FontSize="28" FontWeight="Bold" Foreground="{StaticResource Orange}" Margin="10,0,0,0" VerticalAlignment="Top"/>
+                  <StackPanel>
+                    <TextBlock Text="FICHA DO CORREDOR" Foreground="{StaticResource Orange}" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock x:Name="RunnerNameText" Text="Selecione um corredor na lista." Foreground="{StaticResource InkText}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="RunnerStatusText" Foreground="{StaticResource Muted}" FontSize="12" FontWeight="SemiBold" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </DockPanel>
+                <ScrollViewer Grid.Row="2" Margin="14,0,8,6" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                  <UniformGrid Columns="2" Rows="5">
+                    <StackPanel Margin="0,0,10,8"><TextBlock Text="Número" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldNumber" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,0,8"><TextBlock Text="CHIP" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldChip" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,10,8"><TextBlock Text="CPF" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldCpf" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,0,8"><TextBlock Text="Nascimento" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldBirth" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,10,8"><TextBlock Text="Sexo" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldSex" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,0,8"><TextBlock Text="Camisa" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldShirt" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,10,8"><TextBlock Text="Modalidade" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldModality" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Margin="0,0,0,8"><TextBlock Text="Categoria" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldCategory" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                    <StackPanel Grid.ColumnSpan="2" Margin="0,0,0,4"><TextBlock Text="Retirada" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold"/><TextBlock x:Name="FieldReceiver" Text="—" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource InkText}" TextWrapping="Wrap"/></StackPanel>
+                  </UniformGrid>
+                </ScrollViewer>
+                <Border Grid.Row="3" Background="{StaticResource PanelRaised}" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="12,10" CornerRadius="0,0,3,3">
+                  <StackPanel>
+                    <TextBlock x:Name="DeliveryNotice" Foreground="{StaticResource Orange}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                    <StackPanel x:Name="ThirdPartyPanel" Visibility="Collapsed" Margin="0,0,0,6">
+                      <TextBlock Text="NOME DE QUEM ESTÁ RETIRANDO" Foreground="{StaticResource Muted}" FontWeight="Bold" FontSize="11" Margin="0,0,0,4"/>
+                      <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBox x:Name="ThirdPartyNameBox" VerticalContentAlignment="Center" MaxLength="80" ToolTip="Nome completo de quem está levando o kit"/>
+                        <Button Grid.Column="1" Content="Confirmar retirada" Click="ConfirmThirdParty_Click" Style="{StaticResource OrangeButton}" Margin="8,0,0,8"/>
+                      </Grid>
+                    </StackPanel>
+                    <UniformGrid Columns="2">
+                      <Button Content="Confirmar entrega" Click="Confirm_Click" Style="{StaticResource OrangeButton}" Margin="0,0,6,0"/>
+                      <Button Content="Entrega de terceiro" Click="RevealThirdParty_Click" Margin="6,0,0,0"/>
+                    </UniformGrid>
+                  </StackPanel>
+                </Border>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="ENTREGUES">
+        <Grid Margin="2,8,2,2">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock x:Name="DeliveredTitle" Text="KITS ENTREGUES" Foreground="{StaticResource Orange}" FontWeight="Bold" FontSize="12"/>
+              <TextBlock Text="Quem já retirou o kit na mesa. O leitor usa esta lista no telão." Foreground="{StaticResource Muted}" FontSize="13" Margin="0,4,0,0"/>
+            </StackPanel>
+            <TextBox x:Name="DeliveredSearchBox" Grid.Column="1" Width="280" VerticalContentAlignment="Center" ToolTip="Filtrar entregues pelo nome ou número" TextChanged="DeliveredSearch_TextChanged"/>
+          </Grid>
+          <ListBox x:Name="DeliveredList" Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ListBox.ItemContainerStyle>
+              <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                <Setter Property="MinHeight" Value="52"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+              </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="10,6">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Foreground="{StaticResource Muted}" FontSize="13" Text="{Binding DeliveredDetail}"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding DeliveredAt, StringFormat=Entregue às {0:HH:mm}}" Foreground="{StaticResource Orange}" FontWeight="Bold" VerticalAlignment="Center"/>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="LEITOR RFID">
+        <Grid Margin="2,8,2,2">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*" MinWidth="400"/><ColumnDefinition Width="12"/><ColumnDefinition Width="0.72*" MinWidth="280"/></Grid.ColumnDefinitions>
+          <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="0">
+            <Grid>
+              <Grid.RowDefinitions><RowDefinition Height="6"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+              <Border Background="{StaticResource Orange}" CornerRadius="3,3,0,0"/>
+              <StackPanel Grid.Row="1" Margin="22,16,22,8">
+                <TextBlock Text="ESPELHO DO TELÃO" Foreground="{StaticResource Orange}" FontWeight="Bold" FontSize="12"/>
+                <TextBlock x:Name="StateText" Text="APROXIME O CHIP" Foreground="{StaticResource InkText}" FontFamily="{StaticResource DisplayFont}" FontSize="36" FontWeight="Bold" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                <TextBlock x:Name="ParticipantText" Text="Aguardando corredor da lista." Foreground="{StaticResource InkText}" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                <TextBlock x:Name="DetailsText" Foreground="{StaticResource Muted}" FontSize="15" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                <TextBlock x:Name="OperationNotice" Foreground="{StaticResource Orange}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,12,0,0" Text="KIT ENTREGUE se estiver nesta lista. KIT NÃO ENTREGUE se ainda não retirou."/>
+              </StackPanel>
+              <ListBox x:Name="QueueList" Grid.Row="2" Margin="22,0,22,8" Visibility="Collapsed" SelectionChanged="QueueList_SelectionChanged"/>
+              <Border Grid.Row="3" Background="{StaticResource PanelRaised}" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="18,12">
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <TextBox x:Name="EpcInput" VerticalContentAlignment="Center" ToolTip="CHIP ou EPC para simular a passagem no leitor"/>
+                  <Button Grid.Column="1" Content="Simular leitura" Click="Simulate_Click" Style="{StaticResource OrangeButton}" Margin="12,0,0,0"/>
+                </Grid>
+              </Border>
+            </Grid>
+          </Border>
+          <StackPanel Grid.Column="2">
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="18" Margin="0,0,0,12">
+              <StackPanel>
+                <TextBlock Text="LISTA COM CHIP" Foreground="{StaticResource Orange}" FontWeight="Bold" FontSize="12"/>
+                <TextBlock Text="A mesma lista da mesa" Foreground="{StaticResource InkText}" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="Bold" Margin="0,4,0,10"/>
+                <Button Content="Importar Excel" Click="ImportExcel_Click" Style="{StaticResource OrangeButton}"/>
+                <TextBlock x:Name="ImportReportText" Foreground="{StaticResource Muted}" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,0"/>
+              </StackPanel>
+            </Border>
+            <Border Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="18">
+              <StackPanel>
+                <TextBlock Text="IMPINJ SPEEDWAY R420" Foreground="{StaticResource InkText}" FontFamily="{StaticResource DisplayFont}" FontSize="18" FontWeight="Bold"/>
+                <TextBlock Text="IP DO LEITOR" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
+                <TextBox x:Name="ReaderIp" Text="192.168.0.33"/>
+                <TextBlock Text="ANTENAS ATIVAS" Foreground="{StaticResource Muted}" FontSize="11" FontWeight="Bold" Margin="0,4,0,6"/>
+                <WrapPanel>
+                  <CheckBox x:Name="Antenna1" IsChecked="True" Content="A1"/>
+                  <CheckBox x:Name="Antenna2" IsChecked="True" Content="A2"/>
+                  <CheckBox x:Name="Antenna3" IsChecked="True" Content="A3"/>
+                  <CheckBox x:Name="Antenna4" IsChecked="True" Content="A4"/>
+                </WrapPanel>
+                <WrapPanel Margin="0,6,0,0">
+                  <Button Content="Iniciar R420" Click="StartReader_Click" Style="{StaticResource OrangeButton}"/>
+                  <Button Content="Parar leitor" Click="StopReader_Click"/>
+                </WrapPanel>
+                <Border Background="{StaticResource FieldFill}" BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="11" Margin="0,8,0,0">
+                  <TextBlock x:Name="ReaderStatus" Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Text="R420 desconectado. Ao abrir esta aba o telão espelha a leitura."/>
+                </Border>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Grid>
+      </TabItem>
+    </TabControl>
+    <Border Grid.Row="2" Background="{StaticResource HeaderFill}" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="16,6"><TextBlock Text="MVP offline • Não homologado para prova oficial" Foreground="{StaticResource Muted}" FontSize="11"/></Border>
+  </Grid>
+</Window>

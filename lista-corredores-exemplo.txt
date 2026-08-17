@@ -1,0 +1,4 @@
+Numero;Nome;CHIP;Camisa;Modalidade;Categoria
+21;José da Silva;CHIP21;M;10K;30-39
+44;Ana Souza;CHIP44;P;5K;Geral
+108;Pedro Lima;CHIP108;G;21K;40-49

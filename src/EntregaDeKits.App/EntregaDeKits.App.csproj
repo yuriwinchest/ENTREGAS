@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>EntregaDeKits</AssemblyName><Product>Entrega de Kits CHIPOWER</Product><Version>0.3.3</Version><ApplicationIcon>Resources\chipower.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EntregaDeKits.Core\EntregaDeKits.Core.csproj" />
+    <ProjectReference Include="..\EntregaDeKits.Infrastructure\EntregaDeKits.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\chipower.ico" />
+    <Resource Include="..\..\LOGO\WhatsApp Image 2026-08-03 at 22.00.26.jpeg" Link="Resources\chipower-claro.jpeg" />
+    <Resource Include="..\..\LOGO\WhatsApp Image 2026-08-03 at 22.00.26 (1).jpeg" Link="Resources\chipower-escuro.jpeg" />
+  </ItemGroup>
+</Project>
