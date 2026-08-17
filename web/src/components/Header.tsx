@@ -60,20 +60,24 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-16 gap-4">
           
           {/* Logo & Event */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <div 
+            onClick={() => setCurrentTab("desk")}
+            className="flex items-center gap-3 cursor-pointer group"
+            title="Voltar para a Operação de Balcão"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
               <Zap className="w-6 h-6 text-white fill-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-black font-display tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-400 bg-clip-text text-transparent">
+                <span className="text-xl font-black font-display tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-400 bg-clip-text text-transparent group-hover:opacity-90">
                   CHIPOWER
                 </span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-mono font-medium">
                   KITS CLOUD
                 </span>
               </div>
-              <p className="text-xs text-slate-400 truncate max-w-[200px] sm:max-w-xs font-medium">
+              <p className="text-xs text-slate-400 truncate max-w-[200px] sm:max-w-xs font-medium group-hover:text-slate-300">
                 {eventName || "Entrega Oficial de Kits"}
               </p>
             </div>

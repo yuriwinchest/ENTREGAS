@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { 
   Zap, 
   Maximize2, 
@@ -8,7 +7,9 @@ import {
   Shirt, 
   Award, 
   Users, 
-  Sparkles 
+  Sparkles,
+  ArrowLeft,
+  LayoutDashboard
 } from "lucide-react";
 import { Participant, DeliveryStats } from "../types";
 
@@ -16,15 +17,28 @@ interface LiveScreenProps {
   eventName: string;
   stats: DeliveryStats;
   recentDeliveries: Participant[];
+  onExit: () => void;
 }
 
 export const LiveScreen: React.FC<LiveScreenProps> = ({
   eventName,
   stats,
-  recentDeliveries
+  recentDeliveries,
+  onExit
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [time, setTime] = useState("");
+
+  // Atalho de teclado ESC para voltar ao painel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.fullscreenElement) {
+        onExit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onExit]);
 
   const latestAthlete = recentDeliveries[0] || null;
 
@@ -58,28 +72,42 @@ export const LiveScreen: React.FC<LiveScreenProps> = ({
       
       {/* Top Bar Telão */}
       <header className="flex items-center justify-between pb-6 border-b border-slate-800/80">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-2xl shadow-brand-500/30">
+        <div 
+          onClick={onExit}
+          className="flex items-center gap-4 cursor-pointer group transition-all"
+          title="Clique para voltar à Operação de Balcão"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center shadow-2xl shadow-brand-500/30 group-hover:scale-105 transition-transform">
             <Zap className="w-8 h-8 text-white fill-white" />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl sm:text-4xl font-black font-display tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl font-black font-display tracking-tight bg-gradient-to-r from-white via-slate-100 to-brand-400 bg-clip-text text-transparent group-hover:opacity-90">
                 CHIPOWER
               </h1>
               <span className="px-3 py-1 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/40 text-xs font-mono font-bold">
                 TELÃO AO VIVO
               </span>
             </div>
-            <p className="text-sm sm:text-base text-slate-400 font-medium">
+            <p className="text-sm sm:text-base text-slate-400 font-medium group-hover:text-slate-300">
               {eventName || "Entrega Oficial de Kits"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Botão de Retorno em Destaque */}
+          <button
+            onClick={onExit}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 hover:from-brand-600 hover:to-amber-600 border border-slate-700 hover:border-brand-400 text-slate-200 hover:text-white font-bold text-sm sm:text-base transition-all shadow-lg shadow-black/40 hover:shadow-brand-500/20"
+            title="Voltar para a Operação de Balcão (ESC)"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="hidden sm:inline">Voltar ao Balcão</span>
+          </button>
+
           {/* Relógio Gigante */}
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xl sm:text-2xl font-bold text-brand-400 shadow-inner">
+          <div className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xl sm:text-2xl font-bold text-brand-400 shadow-inner">
             <Clock className="w-6 h-6" />
             <span>{time}</span>
           </div>

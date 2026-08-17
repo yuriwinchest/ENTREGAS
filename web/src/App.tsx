@@ -82,7 +82,7 @@ export function App() {
     }
   }, []);
 
-  // Telão TV Fullscreen sem header
+  // Telão TV Fullscreen
   if (currentTab === "telao") {
     return (
       <div className="relative">
@@ -90,14 +90,8 @@ export function App() {
           eventName={settings.event_name}
           stats={stats}
           recentDeliveries={recentDeliveries}
+          onExit={() => setCurrentTab("desk")}
         />
-        {/* Floating exit button */}
-        <button
-          onClick={() => setCurrentTab("desk")}
-          className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-slate-400 hover:text-white backdrop-blur-md opacity-30 hover:opacity-100 transition-opacity"
-        >
-          Voltar ao Painel
-        </button>
       </div>
     );
   }
