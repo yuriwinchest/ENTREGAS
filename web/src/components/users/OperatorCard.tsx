@@ -1,5 +1,5 @@
 import React from "react";
-import { Shield, User, Mail, Trash2, UserCheck, UserX, Pencil, Crown, KeyRound } from "lucide-react";
+import { Shield, User, Mail, Trash2, UserCheck, UserX, Pencil, Crown, KeyRound, Loader2 } from "lucide-react";
 import { OperatorUser } from "../../types";
 import { findPermission } from "../../lib/permissions";
 
@@ -10,6 +10,8 @@ interface OperatorCardProps {
   onEditar: () => void;
   onAlternarStatus: () => void;
   onExcluir: () => void;
+  onRedefinirSenha: () => void;
+  redefinindoSenha: boolean;
 }
 
 export const OperatorCard: React.FC<OperatorCardProps> = ({
@@ -18,7 +20,9 @@ export const OperatorCard: React.FC<OperatorCardProps> = ({
   ehVoce,
   onEditar,
   onAlternarStatus,
-  onExcluir
+  onExcluir,
+  onRedefinirSenha,
+  redefinindoSenha
 }) => {
   const ehAdmin = operador.role === "admin";
   const ativo = operador.is_active !== false;
@@ -89,6 +93,20 @@ export const OperatorCard: React.FC<OperatorCardProps> = ({
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+          <button
+            onClick={onRedefinirSenha}
+            disabled={redefinindoSenha}
+            title="Gerar uma nova senha para enviar a esta pessoa"
+            className="px-2.5 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-all flex items-center gap-1.5 text-xs font-semibold disabled:opacity-50"
+          >
+            {redefinindoSenha ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <KeyRound className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">Redefinir senha</span>
+          </button>
+
           <button
             onClick={onEditar}
             title="Editar permissões e dados"

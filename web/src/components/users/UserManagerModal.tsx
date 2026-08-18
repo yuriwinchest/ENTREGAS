@@ -16,6 +16,8 @@ import { adminApi } from "../../lib/adminApi";
 import { useSession } from "../../lib/session";
 import { OperatorForm, OperatorFormValues } from "./OperatorForm";
 import { OperatorCard } from "./OperatorCard";
+import { CredentialsCard } from "./CredentialsCard";
+import { Credenciais, gerarSenha } from "../../lib/credenciais";
 
 interface UserManagerModalProps {
   onClose: () => void;
@@ -42,6 +44,10 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({ onClose }) =
 
   const [paraExcluir, setParaExcluir] = useState<OperatorUser | null>(null);
   const [excluindo, setExcluindo] = useState(false);
+
+  // Credencial recém-definida, exibida uma única vez para o admin copiar.
+  const [credenciais, setCredenciais] = useState<{ dados: Credenciais; titulo: string } | null>(null);
+  const [redefinindoId, setRedefinindoId] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -77,7 +83,14 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({ onClose }) =
           permissions: values.permissions,
           ...(values.password ? { password: values.password } : {})
         });
-        avisar(`Acesso de ${values.name} atualizado.`);
+        if (values.password) {
+          setCredenciais({
+            titulo: "Senha alterada",
+            dados: { nome: values.name, email: emEdicao.email, senha: values.password }
+          });
+        } else {
+          avisar(`Acesso de ${values.name} atualizado.`);
+        }
 
         // Se o admin mexeu no próprio acesso, a sessão precisa refletir agora.
         if (emEdicao.user_id === session?.user.$id) await reload();
@@ -89,7 +102,13 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({ onClose }) =
           role: values.role,
           permissions: values.permissions
         });
-        avisar(`Usuário ${values.name} criado com acesso ao ambiente.`);
+
+        // A senha só existe em texto aqui, neste instante. Depois disso o
+        // servidor guarda apenas o hash — por isso o cartão abre na hora.
+        setCredenciais({
+          titulo: "Usuário criado",
+          dados: { nome: values.name, email: values.email, senha: values.password }
+        });
       }
 
       setModo("lista");
@@ -113,6 +132,29 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({ onClose }) =
       avisar(`Acesso de ${operador.name} ${ativar ? "reativado" : "desativado"}.`);
     } catch (err: any) {
       alert(err?.message || "Não foi possível alterar o status deste usuário.");
+    }
+  };
+
+  /**
+   * Gera uma senha nova e mostra para o admin enviar.
+   *
+   * É o caminho para "o operador esqueceu a senha": a original não pode ser
+   * recuperada — o servidor guarda apenas o hash dela.
+   */
+  const redefinirSenha = async (operador: OperatorUser) => {
+    setRedefinindoId(operador.$id);
+    try {
+      const novaSenha = gerarSenha();
+      await adminApi.updateOperator(operador.$id, { password: novaSenha });
+
+      setCredenciais({
+        titulo: "Nova senha gerada",
+        dados: { nome: operador.name, email: operador.email, senha: novaSenha }
+      });
+    } catch (err: any) {
+      alert(err?.message || "Não foi possível redefinir a senha deste usuário.");
+    } finally {
+      setRedefinindoId(null);
     }
   };
 
@@ -236,6 +278,8 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({ onClose }) =
                   }}
                   onAlternarStatus={() => alternarStatus(op)}
                   onExcluir={() => setParaExcluir(op)}
+                  onRedefinirSenha={() => redefinirSenha(op)}
+                  redefinindoSenha={redefinindoId === op.$id}
                 />
               ))}
             </div>
@@ -254,6 +298,14 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({ onClose }) =
           </button>
         </div>
       </div>
+
+      {credenciais && (
+        <CredentialsCard
+          credenciais={credenciais.dados}
+          titulo={credenciais.titulo}
+          onFechar={() => setCredenciais(null)}
+        />
+      )}
 
       {paraExcluir && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">

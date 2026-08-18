@@ -11,10 +11,12 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
-  Save
+  Save,
+  Wand2
 } from "lucide-react";
 import { OperatorUser } from "../../types";
 import { PermissionKey, DEFAULT_OPERATOR_PERMISSIONS, ADMIN_PERMISSIONS } from "../../lib/permissions";
+import { gerarSenha } from "../../lib/credenciais";
 import { PermissionMatrix } from "./PermissionMatrix";
 
 export interface OperatorFormValues {
@@ -170,6 +172,18 @@ export const OperatorForm: React.FC<OperatorFormProps> = ({
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPassword(gerarSenha());
+              setShowPassword(true);
+            }}
+            className="mt-1.5 text-[11px] font-semibold text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors"
+          >
+            <Wand2 className="w-3 h-3" />
+            Gerar uma senha segura
+          </button>
         </div>
 
         <div>
