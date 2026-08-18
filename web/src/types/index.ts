@@ -74,6 +74,19 @@ export interface OperatorUser extends Models.Document {
   permissions?: string[];
 }
 
+/** Registro de uma planilha anexada a um evento. */
+export interface ImportBatch extends Models.Document {
+  tenant_id?: string;
+  event_id: string;
+  event_name?: string;
+  file_name?: string;
+  owner_id?: string;
+  owner_name?: string;
+  inserted: number;
+  updated: number;
+  skipped: number;
+}
+
 export interface Tenant extends Models.Document {
   name: string;
   owner_user_id: string;

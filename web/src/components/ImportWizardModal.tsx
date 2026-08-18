@@ -323,25 +323,40 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
       }
 
       // 2. Importação em lote ultra-rápida (com 25 workers concorrentes)
+      // 2. Gravação em lotes de 100. `duplicados` decide o que fazer com quem
+      //    já está no evento — é o que permite complementar a tabela sem
+      //    cadastrar a mesma pessoa duas vezes.
       const res = await api.batchImportParticipants(
         mappedParticipants,
         finalEvent.$id,
         finalEvent.name,
         (curr, tot) => {
           setImportProgress({ current: curr, total: tot });
-        }
+        },
+        duplicados
       );
 
-      if (res.inserted > 0) {
-        alert(
-          `Importação concluída com sucesso!\n\n` +
-          `🏆 Evento: ${finalEvent.name}\n` +
-          `✓ ${res.inserted} atletas vinculados e gravados com alta performance no Appwrite Cloud.\n` +
-          `${res.errors > 0 ? `⚠️ ${res.errors} registros tiveram alertas.` : ""}`
-        );
+      // 3. Registra o anexo no histórico do evento: é o que faz a aba mostrar
+      //    que aquela tabela foi montada a partir de mais de uma planilha.
+      await api.registrarImportacao({
+        eventId: finalEvent.$id,
+        eventName: finalEvent.name,
+        fileName,
+        inserted: res.inserted,
+        updated: res.updated,
+        skipped: res.skipped
+      });
+
+      if (res.inserted > 0 || res.updated > 0 || res.skipped > 0) {
+        const linhas = [`Evento: ${finalEvent.name}`, `${res.inserted} atleta(s) novo(s) incluído(s)`];
+        if (res.updated > 0) linhas.push(`${res.updated} cadastro(s) atualizado(s)`);
+        if (res.skipped > 0) linhas.push(`${res.skipped} já estava(m) na tabela e foi(ram) mantido(s)`);
+        if (res.errors > 0) linhas.push(`${res.errors} registro(s) com problema`);
+
+        alert(["Importação concluída.", "", ...linhas].join("\n"));
         onSuccess(finalEvent);
       } else {
-        alert(`Atenção: Nenhum atleta foi inserido (${res.errors} erros). Verifique a conexão ou os dados da planilha.`);
+        alert(`Nenhum atleta foi importado (${res.errors} erro(s)). Verifique os dados da planilha.`);
       }
       });
     } catch (err: any) {

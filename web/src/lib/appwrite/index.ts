@@ -9,6 +9,7 @@ import { eventsApi } from "./events";
 import { participantsApi } from "./participants";
 import { deliveriesApi } from "./deliveries";
 import { settingsApi } from "./settings";
+import { importBatchesApi } from "./importBatches";
 
 export {
   client,
@@ -45,6 +46,7 @@ export const api = {
   ...participantsApi,
   ...deliveriesApi,
   ...settingsApi,
+  ...importBatchesApi,
 
   /** Alias histórico usado pelo balcão de entrega. */
   confirmDelivery: deliveriesApi.deliverKit

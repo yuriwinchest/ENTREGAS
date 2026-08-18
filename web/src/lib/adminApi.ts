@@ -27,12 +27,26 @@ export class AdminApiError extends Error {
   }
 }
 
-/** Tentativas extras para absorver o cold start do runtime da Function. */
+/**
+ * Tentativas extras para absorver o cold start do runtime da Function.
+ *
+ * Depois de cada publicação da Function o contêiner sobe do zero e a primeira
+ * chamada pode estourar o tempo de duas formas diferentes: o Appwrite devolve
+ * 408 antes da resposta, ou a execução volta 5xx com "Execution timed out".
+ * As duas são transitórias e valem uma nova tentativa; qualquer outra falha
+ * sobe na hora, porque insistir num erro real só atrasa o operador.
+ */
 const TENTATIVAS = 3;
 const ESPERA_ENTRE_TENTATIVAS_MS = 1500;
 
 const ehTimeoutDeColdStart = (err: any) =>
   err?.code === 408 || err?.type === "function_synchronous_timeout";
+
+/** Execução que subiu, mas morreu antes de responder. */
+const ehExecucaoQueMorreu = (execution: any) =>
+  !execution?.responseBody ||
+  execution.responseStatusCode === 0 ||
+  execution.responseStatusCode >= 500;
 
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -75,6 +89,12 @@ async function chamar<T>(action: string, payload: Record<string, unknown> = {}):
       );
     }
 
+    if (ehExecucaoQueMorreu(execution) && tentativa < TENTATIVAS) {
+      ultimoErro = new AdminApiError("A execução no servidor não respondeu a tempo.", 500);
+      await esperar(ESPERA_ENTRE_TENTATIVAS_MS);
+      continue;
+    }
+
     let corpo: any = {};
     try {
       corpo = JSON.parse(execution.responseBody || "{}");
@@ -93,8 +113,9 @@ async function chamar<T>(action: string, payload: Record<string, unknown> = {}):
   }
 
   throw new AdminApiError(
-    ultimoErro?.message || "Não foi possível concluir a operação.",
-    ultimoErro?.code || 500
+    ultimoErro?.message ||
+      "O servidor de administração não respondeu. Aguarde alguns segundos e tente novamente.",
+    ultimoErro?.code || ultimoErro?.status || 500
   );
 }
 
