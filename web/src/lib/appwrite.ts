@@ -1,5 +1,5 @@
 import { Client, Databases, Account, Query, ID } from "appwrite";
-import { Participant, DeliveryAudit, EventSettings, DeliveryStats, EventItem } from "../types";
+import { Participant, DeliveryAudit, EventSettings, DeliveryStats, EventItem, OperatorUser } from "../types";
 
 // Configurações do Appwrite Cloud
 export const APPWRITE_ENDPOINT = "https://db.largadabrasil.com/v1";
@@ -10,7 +10,8 @@ export const COLLECTIONS = {
   PARTICIPANTS: "participants",
   DELIVERY_AUDIT: "delivery_audit",
   EVENT_SETTINGS: "event_settings",
-  EVENTS: "events"
+  EVENTS: "events",
+  OPERATORS: "operators"
 };
 
 export const client = new Client()
@@ -748,5 +749,94 @@ export const api = {
     });
 
     return { inserted, errors };
+  },
+
+  // -----------------------------------------------------------
+  // GESTÃO DE OPERADORES E USUÁRIOS (EQUIPE)
+  // -----------------------------------------------------------
+  async listOperators(): Promise<OperatorUser[]> {
+    try {
+      const res = await databases.listDocuments<OperatorUser>(
+        DATABASE_ID,
+        COLLECTIONS.OPERATORS,
+        [Query.orderDesc("$createdAt"), Query.limit(100)]
+      );
+      return res.documents;
+    } catch (err) {
+      console.error("Erro ao listar operadores:", err);
+      return [];
+    }
+  },
+
+  async createOperator(data: {
+    name: string;
+    email: string;
+    password?: string;
+    role?: 'admin' | 'operador';
+  }): Promise<OperatorUser> {
+    const cleanName = data.name.trim().slice(0, 250);
+    const cleanEmail = data.email.trim().toLowerCase().slice(0, 250);
+    const cleanRole = data.role || 'operador';
+    const cleanPassword = data.password || "Operador@2026";
+    let userId = ID.unique();
+
+    // Criação de credencial de autenticação desacoplada (não afeta sessão atual do admin)
+    try {
+      const authRes = await fetch(`${APPWRITE_ENDPOINT}/account`, {
+        method: "POST",
+        headers: {
+          "X-Appwrite-Project": APPWRITE_PROJECT_ID,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: userId,
+          email: cleanEmail,
+          password: cleanPassword,
+          name: cleanName
+        })
+      });
+      const authData = await authRes.json();
+      if (authRes.ok && authData.$id) {
+        userId = authData.$id;
+      }
+    } catch (authErr) {
+      console.warn("Aviso ao registrar conta de autenticação:", authErr);
+    }
+
+    // Persistência na coleção de operadores
+    return await databases.createDocument<OperatorUser>(
+      DATABASE_ID,
+      COLLECTIONS.OPERATORS,
+      ID.unique(),
+      {
+        name: cleanName,
+        email: cleanEmail,
+        role: cleanRole,
+        is_active: true,
+        user_id: userId
+      }
+    );
+  },
+
+  async updateOperator(
+    id: string,
+    data: { name?: string; role?: 'admin' | 'operador'; is_active?: boolean }
+  ): Promise<OperatorUser> {
+    const payload: any = {};
+    if (data.name !== undefined) payload.name = data.name.trim().slice(0, 250);
+    if (data.role !== undefined) payload.role = data.role;
+    if (data.is_active !== undefined) payload.is_active = data.is_active;
+
+    return await databases.updateDocument<OperatorUser>(
+      DATABASE_ID,
+      COLLECTIONS.OPERATORS,
+      id,
+      payload
+    );
+  },
+
+  async deleteOperator(id: string): Promise<void> {
+    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.OPERATORS, id);
   }
 };
+

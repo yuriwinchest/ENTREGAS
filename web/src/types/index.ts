@@ -59,3 +59,15 @@ export interface DeliveryStats {
   eventId?: string | null;
   eventName?: string | null;
 }
+
+export interface OperatorUser {
+  $id: string;
+  user_id?: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'operador';
+  is_active: boolean;
+  $createdAt?: string;
+  $updatedAt?: string;
+}
+

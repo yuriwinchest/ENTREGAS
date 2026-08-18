@@ -24,6 +24,8 @@ interface HeaderProps {
   setOperatorName: (name: string) => void;
   online: boolean;
   onLogout?: () => void;
+  // Gestão de Usuários / Operadores
+  onOpenUserManager?: () => void;
   // Gestão de Eventos
   events?: EventItem[];
   activeEvent?: EventItem | null;
@@ -39,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   setOperatorName,
   online,
   onLogout,
+  onOpenUserManager,
   events = [],
   activeEvent = null,
   onSelectEvent,
@@ -306,6 +309,18 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Equipe / Gestão de Operadores */}
+            {onOpenUserManager && (
+              <button
+                onClick={onOpenUserManager}
+                title="Gestão de Equipe e Operadores"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-300 transition-all text-xs font-semibold"
+              >
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Equipe</span>
+              </button>
+            )}
 
             {/* Logout Button */}
             {onLogout && (

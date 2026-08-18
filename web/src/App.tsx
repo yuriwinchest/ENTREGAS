@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { Header } from "./components/Header";
+import { EventTabsBar } from "./components/EventTabsBar";
 import { StatsCards } from "./components/StatsCards";
 import { DeliveryDesk } from "./components/DeliveryDesk";
 import { LiveScreen } from "./components/LiveScreen";
@@ -7,6 +9,8 @@ import { ParticipantsManager } from "./components/ParticipantsManager";
 import { SettingsModal } from "./components/SettingsModal";
 import { LoginScreen } from "./components/LoginScreen";
 import { EventManagerModal } from "./components/EventManagerModal";
+import { UserManagerModal } from "./components/UserManagerModal";
+import { ImportWizardModal } from "./components/ImportWizardModal";
 import { Participant, EventSettings, DeliveryStats, EventItem } from "./types";
 import { api, client, auth, DATABASE_ID, COLLECTIONS } from "./lib/appwrite";
 import { Models } from "appwrite";
@@ -26,6 +30,13 @@ export function App() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);
   const [isEventManagerOpen, setIsEventManagerOpen] = useState(false);
+  const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
+
+  // Importação Rápida Global de Planilhas
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importWorkbook, setImportWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [importFileName, setImportFileName] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados Globais de Dados
   const [stats, setStats] = useState<DeliveryStats>({
@@ -141,6 +152,28 @@ export function App() {
     setUser(null);
   };
 
+  // Leitura de Planilha via Input Global
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: "array" });
+        setImportWorkbook(wb);
+        setImportFileName(file.name);
+        setIsImportModalOpen(true);
+      } catch (err) {
+        console.error("Erro ao ler arquivo:", err);
+        alert("Erro ao ler o arquivo selecionado. Verifique se é um arquivo Excel (.xlsx, .xls) ou CSV válido.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
   // Carregamento Inicial Ultrarrápido de Sessão
   if (authChecking) {
     return (
@@ -186,6 +219,15 @@ export function App() {
   // Painel Principal Operacional Autenticado
   return (
     <div className="min-h-screen bg-navy-950 text-slate-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+      {/* Input Oculto de Arquivo Global para Importação */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+      />
+
       {/* Top Header */}
       <Header
         currentTab={currentTab}
@@ -195,12 +237,22 @@ export function App() {
         setOperatorName={setOperatorName}
         online={online}
         onLogout={handleLogout}
+        onOpenUserManager={() => setIsUserManagerOpen(true)}
         events={events}
         activeEvent={activeEvent}
         onSelectEvent={(ev) => {
           setActiveEvent(ev);
         }}
         onOpenEventManager={() => setIsEventManagerOpen(true)}
+      />
+
+      {/* Barra de Abas Horizontais de Eventos / Tabelas */}
+      <EventTabsBar
+        events={events}
+        activeEvent={activeEvent}
+        onSelectEvent={(ev) => setActiveEvent(ev)}
+        onOpenEventManager={() => setIsEventManagerOpen(true)}
+        onOpenImportModal={() => fileInputRef.current?.click()}
       />
 
       {/* Main Container */}
@@ -260,6 +312,38 @@ export function App() {
         />
       )}
 
+      {/* Modal de Gestão de Operadores / Usuários (Admin) */}
+      {isUserManagerOpen && (
+        <UserManagerModal
+          onClose={() => setIsUserManagerOpen(false)}
+        />
+      )}
+
+      {/* Modal de Assistente de Importação Global */}
+      {isImportModalOpen && importWorkbook && (
+        <ImportWizardModal
+          workbook={importWorkbook}
+          fileName={importFileName}
+          existingEvents={events}
+          activeEventId={activeEvent?.$id || null}
+          onClose={() => {
+            setIsImportModalOpen(false);
+            setImportWorkbook(null);
+            setImportFileName("");
+          }}
+          onSuccess={(newEvent) => {
+            setIsImportModalOpen(false);
+            setImportWorkbook(null);
+            setImportFileName("");
+            loadEvents();
+            if (newEvent) {
+              setActiveEvent(newEvent);
+            }
+            refreshData();
+          }}
+        />
+      )}
+
       {/* Footer */}
       <footer className="border-t border-slate-900 py-4 bg-navy-950 text-center text-xs text-slate-500 font-mono">
         CHIPOWER Kits Cloud Platform • Evento Ativo: <strong className="text-slate-300">{activeEvent ? activeEvent.name : "Visão Geral (Todos os Eventos)"}</strong> • Operador: <strong className="text-slate-400">{operatorName}</strong> ({user.email})
@@ -269,3 +353,4 @@ export function App() {
 }
 
 export default App;
+
