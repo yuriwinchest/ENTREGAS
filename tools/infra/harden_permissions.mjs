@@ -142,19 +142,20 @@ async function desligarCadastroPublico() {
 
   if (SOMENTE_VERIFICAR) return;
 
-  // Sem isso, qualquer visitante cria a própria conta no projeto pela API
-  // pública — a criação de acesso tem que passar pela Function de administração.
-  for (const metodo of ["anonymous", "magic-url", "email-otp", "invites"]) {
-    await request(`/projects/${process.env.APPWRITE_PROJECT_ID || "6a8238cc001997d3b0c8"}/auth/${metodo}`, "PATCH", {
-      status: false
-    })
+  const projectId = process.env.APPWRITE_PROJECT_ID || "6a8238cc001997d3b0c8";
+
+  // Sessão anônima não serve a nada aqui e só abre superfície de ataque.
+  // Os demais métodos ficam como estão: e-mail/senha é o login legítimo e
+  // desligá-lo derrubaria a operação inteira.
+  //
+  // O auto-cadastro por e-mail continua tecnicamente possível, mas é inócuo:
+  // uma conta criada por fora não tem operador nem ambiente, então cai na tela
+  // "Conta ainda sem ambiente" e não enxerga um único documento.
+  for (const metodo of ["anonymous", "magic-url", "email-otp"]) {
+    await request(`/projects/${projectId}/auth/${metodo}`, "PATCH", { enabled: false })
       .then(() => console.log(`  [+] método de autenticação "${metodo}" desativado`))
       .catch((err) => console.warn(`  [!] não foi possível desativar "${metodo}": ${err.message}`));
   }
-
-  await request(`/projects/${process.env.APPWRITE_PROJECT_ID || "6a8238cc001997d3b0c8"}/auth/limit`, "PATCH", {
-    limit: 0
-  }).catch(() => {});
 }
 
 async function main() {
