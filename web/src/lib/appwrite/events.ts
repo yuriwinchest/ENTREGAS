@@ -7,6 +7,7 @@ import {
   tenantDocumentPermissions,
   setVisibleEventIds
 } from "./tenancy";
+import { adminApi } from "../adminApi";
 import { EventItem, Participant } from "../../types";
 
 const limitarTexto = (valor: string | undefined | null, max: number) =>
@@ -132,15 +133,18 @@ export const eventsApi = {
     return atualizado;
   },
 
-  async deleteEvent(
-    id: string,
-    removerAtletas: (eventId: string, onProgress?: (c: number, t: number) => void) => Promise<unknown>,
-    onProgress?: (current: number, total: number) => void
-  ): Promise<boolean> {
+  /**
+   * Exclui a prova e todos os atletas dela.
+   *
+   * Roda na Function `admin-api`: apagar centenas de registros de uma vez é
+   * operação destrutiva em massa e não acontece no navegador (ver bulkData.js).
+   */
+  async deleteEvent(id: string, onProgress?: (current: number, total: number) => void): Promise<boolean> {
     try {
-      await removerAtletas(id, onProgress);
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.EVENTS, id);
-      return true;
+      onProgress?.(0, 1);
+      const res = await adminApi.deleteEvent(id);
+      onProgress?.(res.athletesDeleted, res.athletesDeleted || 1);
+      return res.deleted;
     } catch (err) {
       console.error("Erro ao excluir evento:", err);
       return false;

@@ -26,6 +26,8 @@ export {
 
 export { auth } from "./auth";
 
+export { createDocumentsInBatches } from "./bulk";
+
 export {
   setTenantContext,
   getTenantContext,
@@ -43,10 +45,6 @@ export const api = {
   ...participantsApi,
   ...deliveriesApi,
   ...settingsApi,
-
-  /** Exclui a prova e, junto, todos os atletas vinculados a ela. */
-  deleteEvent: (id: string, onProgress?: (current: number, total: number) => void) =>
-    eventsApi.deleteEvent(id, participantsApi.deleteAllParticipants, onProgress),
 
   /** Alias histórico usado pelo balcão de entrega. */
   confirmDelivery: deliveriesApi.deliverKit

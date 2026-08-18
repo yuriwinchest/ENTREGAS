@@ -18,6 +18,7 @@ import {
   excluirOperador,
   reconciliarEquipe
 } from "./operators.js";
+import { excluirAtletas, resetarEntregas, excluirEvento } from "./bulkData.js";
 import { PERMISSION_KEYS } from "./permissions.js";
 
 const ACOES = {
@@ -43,7 +44,13 @@ const ACOES = {
   createOperator: criarOperador,
   updateOperator: atualizarOperador,
   deleteOperator: excluirOperador,
-  repairTeam: reconciliarEquipe
+  repairTeam: reconciliarEquipe,
+
+  // Operações destrutivas em massa. Vivem no servidor de propósito — ver o
+  // cabeçalho de bulkData.js para o porquê.
+  purgeParticipants: excluirAtletas,
+  resetDeliveries: resetarEntregas,
+  deleteEvent: excluirEvento
 };
 
 export default async ({ req, res, log, error }) => {

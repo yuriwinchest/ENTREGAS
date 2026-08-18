@@ -38,3 +38,6 @@ tools/*.mjs
 .agents/
 .gemini/
 scratch/
+
+# Backups do banco (contem dados pessoais de atletas)
+backups/

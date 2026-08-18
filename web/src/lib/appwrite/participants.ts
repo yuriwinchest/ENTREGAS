@@ -1,6 +1,8 @@
 import { Query, ID } from "appwrite";
 import { databases, DATABASE_ID, COLLECTIONS, normalizeFolded, runConcurrentPool } from "./client";
 import { requireTenant, tenantScope, eventScope, tenantDocumentPermissions } from "./tenancy";
+import { createDocumentsInBatches } from "./bulk";
+import { adminApi } from "../adminApi";
 import { Participant, DeliveryStats } from "../../types";
 
 const CONCORRENCIA = 25;
@@ -85,26 +87,49 @@ export const participantsApi = {
   findParticipantByQr: (qr: string, eventId?: string | null) =>
     buscarPorCampo("qr_code", qr, eventId),
 
+  /**
+   * Busca do balcão.
+   *
+   * Só há um índice fulltext por collection nesta instância, e ele está em
+   * `name`. Número, chip, CPF e QR usam igualdade exata — que é o que o
+   * scanner precisa. Antes isto usava `Query.contains`, que sem índice
+   * fulltext devolvia zero para qualquer nome: o operador digitava e nunca
+   * aparecia ninguém.
+   */
   async searchParticipants(termo: string, eventId?: string | null, limit = 10): Promise<Participant[]> {
     const limpo = termo.trim();
     if (!limpo) return [];
 
-    try {
-      const queries = [...tenantScope(), ...eventScope(eventId), Query.limit(limit)];
+    const escopo = [...tenantScope(), ...eventScope(eventId), Query.limit(limit)];
+    const somenteDigitos = limpo.replace(/\D/g, "");
 
-      if (/^\d+$/.test(limpo)) queries.push(Query.equal("bib_number", limpo));
-      else queries.push(Query.contains("name", limpo.toUpperCase()));
+    // Tentativas em ordem de precisão: o primeiro acerto encerra a busca.
+    const tentativas: string[][] = [];
 
-      const res = await databases.listDocuments<Participant>(
-        DATABASE_ID,
-        COLLECTIONS.PARTICIPANTS,
-        queries
-      );
-      return res.documents;
-    } catch (err) {
-      console.error("Erro na busca de atletas:", err);
-      return [];
+    if (/^\d+$/.test(limpo)) {
+      tentativas.push([Query.equal("bib_number", limpo)]);
+      tentativas.push([Query.equal("chip", limpo.toUpperCase())]);
+    } else {
+      tentativas.push([Query.search("name", limpo.toUpperCase())]);
+      tentativas.push([Query.equal("chip", limpo.toUpperCase())]);
+      tentativas.push([Query.equal("qr_code", limpo)]);
     }
+
+    if (somenteDigitos.length === 11) tentativas.push([Query.equal("cpf", limpo)]);
+
+    for (const tentativa of tentativas) {
+      try {
+        const res = await databases.listDocuments<Participant>(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
+          ...escopo,
+          ...tentativa
+        ]);
+        if (res.documents.length > 0) return res.documents;
+      } catch (err) {
+        console.warn("Consulta de busca recusada, tentando a próxima:", err);
+      }
+    }
+
+    return [];
   },
 
   async listParticipants(options?: {
@@ -126,7 +151,15 @@ export const participantsApi = {
     if (options?.deliveredOnly) queries.push(Query.isNotNull("delivered_at"));
     else if (options?.pendingOnly) queries.push(Query.isNull("delivered_at"));
 
-    if (options?.search) queries.push(Query.contains("name", options.search.trim().toUpperCase()));
+    if (options?.search) {
+      const termo = options.search.trim();
+      // `search` usa o índice fulltext; para número de peito, igualdade exata.
+      queries.push(
+        /^\d+$/.test(termo)
+          ? Query.equal("bib_number", termo)
+          : Query.search("name", termo.toUpperCase())
+      );
+    }
 
     try {
       const res = await databases.listDocuments<Participant>(
@@ -205,103 +238,52 @@ export const participantsApi = {
     }
   },
 
-  /** Exclusão em massa dentro do escopo do tenant, em lotes concorrentes. */
+  /**
+   * Exclusão em massa dos atletas.
+   *
+   * Executada pela Function `admin-api`, NUNCA aqui no navegador.
+   *
+   * Motivo: a exclusão em lote do Appwrite só respeita o filtro quando ele vai
+   * no corpo da requisição. Enviado na query string, o filtro é ignorado em
+   * silêncio e a COLLECTION INTEIRA é apagada. Concentrar essa chamada num
+   * único ponto no servidor — onde o filtro de tenant é obrigatório e a
+   * contagem é conferida antes e depois — é o que impede um acidente desses.
+   */
   async deleteAllParticipants(
     eventId?: string | null,
     onProgress?: (current: number, total: number) => void
   ): Promise<{ deleted: number; errors: number }> {
-    let deleted = 0;
-    let errors = 0;
-
     try {
-      const base = [...tenantScope(), ...eventScope(eventId)];
+      const alvo = eventId && eventId !== "all" ? eventId : null;
 
-      const inicial = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
-        ...base,
-        Query.limit(1)
-      ]);
+      onProgress?.(0, 1);
+      const res = await adminApi.purgeParticipants(alvo);
+      onProgress?.(res.deleted, res.deleted || 1);
 
-      const totalInicial = inicial.total;
-      if (totalInicial === 0) return { deleted: 0, errors: 0 };
-
-      for (;;) {
-        const lote = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
-          ...base,
-          Query.select(["$id"]),
-          Query.limit(100)
-        ]);
-
-        if (lote.documents.length === 0) break;
-
-        await runConcurrentPool(
-          lote.documents.map((d) => d.$id),
-          CONCORRENCIA,
-          async (id) => {
-            try {
-              await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PARTICIPANTS, id);
-              deleted++;
-            } catch (e) {
-              console.warn("Erro ao excluir documento:", id, e);
-              errors++;
-            }
-            onProgress?.(deleted + errors, totalInicial);
-          }
-        );
-
-        if (lote.documents.length < 100) break;
-      }
+      return { deleted: res.deleted, errors: 0 };
     } catch (err) {
-      console.error("Erro na limpeza em massa:", err);
+      console.error("Erro na exclusão em massa:", err);
+      return { deleted: 0, errors: 1 };
     }
-
-    return { deleted, errors };
   },
 
+  /** Reset de entregas em massa. Mesmo caminho servidor da exclusão. */
   async resetAllDeliveries(
     eventId?: string | null,
     onProgress?: (current: number, total: number) => void
   ): Promise<{ reset: number; errors: number }> {
-    let reset = 0;
-    let errors = 0;
-
     try {
-      const entregues = await databases.listDocuments<Participant>(
-        DATABASE_ID,
-        COLLECTIONS.PARTICIPANTS,
-        [
-          ...tenantScope(),
-          ...eventScope(eventId),
-          Query.isNotNull("delivered_at"),
-          Query.select(["$id"]),
-          Query.limit(5000)
-        ]
-      );
+      const alvo = eventId && eventId !== "all" ? eventId : null;
 
-      const total = entregues.documents.length;
-      if (total === 0) return { reset: 0, errors: 0 };
+      onProgress?.(0, 1);
+      const res = await adminApi.resetDeliveries(alvo);
+      onProgress?.(res.reset, res.reset || 1);
 
-      await runConcurrentPool(
-        entregues.documents.map((d) => d.$id),
-        CONCORRENCIA,
-        async (id) => {
-          try {
-            await databases.updateDocument(DATABASE_ID, COLLECTIONS.PARTICIPANTS, id, {
-              delivered_at: null,
-              receiver_name: null
-            });
-            reset++;
-          } catch (e) {
-            console.warn("Erro ao resetar entrega:", id, e);
-            errors++;
-          }
-          onProgress?.(reset + errors, total);
-        }
-      );
+      return { reset: res.reset, errors: 0 };
     } catch (err) {
       console.error("Erro ao resetar entregas:", err);
+      return { reset: 0, errors: 1 };
     }
-
-    return { reset, errors };
   },
 
   /** Importação em lote de uma planilha já mapeada, sempre vinculada a um evento. */
@@ -325,17 +307,14 @@ export const participantsApi = {
     const tenant = requireTenant();
     const permissoes = tenantDocumentPermissions();
 
-    let inserted = 0;
-    let errors = 0;
-    let concluidos = 0;
-    const total = lista.length;
-
-    const payloads = lista.map((p) => {
+    const documentos = lista.map((p) => {
       const bib = texto(p.bib_number, 30) || "0";
       const chip = (texto(p.chip, 60) || bib).toUpperCase();
       const nome = (texto(p.name, 250) || "ATLETA").toUpperCase();
 
       return {
+        $id: ID.unique(),
+        $permissions: permissoes,
         bib_number: bib,
         chip,
         name: nome,
@@ -356,24 +335,16 @@ export const participantsApi = {
       };
     });
 
-    await runConcurrentPool(payloads, CONCORRENCIA, async (payload) => {
-      try {
-        await databases.createDocument(
-          DATABASE_ID,
-          COLLECTIONS.PARTICIPANTS,
-          ID.unique(),
-          payload,
-          permissoes
-        );
-        inserted++;
-      } catch (err) {
-        console.warn(`Erro ao importar ${payload.name} (#${payload.bib_number}):`, err);
-        errors++;
-      } finally {
-        concluidos++;
-        onProgress?.(concluidos, total);
-      }
-    });
+    // Gravação em lotes de 100. Uma planilha de 2 mil atletas sai em 20
+    // requisições no lugar de 2 mil — era esse round-trip por linha que fazia
+    // a importação demorar minutos.
+    const { inserted, errors, requisicoes } = await createDocumentsInBatches(
+      COLLECTIONS.PARTICIPANTS,
+      documentos,
+      onProgress
+    );
+
+    console.info(`Importação: ${inserted} atletas em ${requisicoes} requisição(ões).`);
 
     return { inserted, errors };
   }

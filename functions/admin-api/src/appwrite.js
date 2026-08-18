@@ -57,7 +57,8 @@ export const q = {
   limit: (n) => JSON.stringify({ method: "limit", values: [n] }),
   offset: (n) => JSON.stringify({ method: "offset", values: [n] }),
   equal: (attribute, values) => JSON.stringify({ method: "equal", attribute, values: [].concat(values) }),
-  orderDesc: (attribute) => JSON.stringify({ method: "orderDesc", attribute })
+  orderDesc: (attribute) => JSON.stringify({ method: "orderDesc", attribute }),
+  isNotNull: (attribute) => JSON.stringify({ method: "isNotNull", attribute })
 };
 
 export const qs = (queries) => queries.map((item) => `queries[]=${encodeURIComponent(item)}`).join("&");

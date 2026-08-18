@@ -128,5 +128,21 @@ export const adminApi = {
 
   deleteOperator: (operatorId: string) => chamar<{ deleted: boolean }>("deleteOperator", { operatorId }),
 
-  repairTeam: () => chamar<{ repaired: number; total: number }>("repairTeam")
+  repairTeam: () => chamar<{ repaired: number; total: number }>("repairTeam"),
+
+  /**
+   * Operações destrutivas em massa.
+   *
+   * Rodam no servidor por decisão de arquitetura: o filtro das escritas em
+   * lote do Appwrite só é respeitado no corpo da requisição, e um filtro
+   * ignorado apaga a collection inteira. Esse risco não fica no navegador.
+   */
+  purgeParticipants: (eventId: string | null) =>
+    chamar<{ deleted: number; before: number; after: number }>("purgeParticipants", { eventId }),
+
+  resetDeliveries: (eventId: string | null) =>
+    chamar<{ reset: number; before: number }>("resetDeliveries", { eventId }),
+
+  deleteEvent: (eventId: string) =>
+    chamar<{ deleted: boolean; athletesDeleted: number }>("deleteEvent", { eventId })
 };
