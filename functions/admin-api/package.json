@@ -1,0 +1,8 @@
+{
+  "name": "chipower-admin-api",
+  "version": "1.0.0",
+  "description": "API privilegiada de administração de tenants, operadores e permissões do CHIPOWER Entregas",
+  "type": "module",
+  "main": "src/main.js",
+  "private": true
+}

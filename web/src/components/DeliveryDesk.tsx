@@ -21,6 +21,7 @@ import {
 import confetti from "canvas-confetti";
 import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
+import { useSession } from "../lib/session";
 import { sounds } from "../lib/audio";
 import { QRCodeModal } from "./QRCodeModal";
 import { DeliveryReceiptModal } from "./DeliveryReceiptModal";
@@ -38,6 +39,8 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
   recentDeliveries,
   activeEvent = null
 }) => {
+  const { can } = useSession();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Participant[]>([]);
   const [selectedAthlete, setSelectedAthlete] = useState<Participant | null>(null);
@@ -121,6 +124,11 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
   const handleConfirmDelivery = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedAthlete || delivering) return;
+
+    if (!can("delivery.confirm")) {
+      alert("Seu acesso não permite confirmar a entrega de kits.");
+      return;
+    }
 
     if (selectedAthlete.delivered_at) {
       if (!window.confirm("ATENÇÃO: Este atleta já consta como ENTREGUE no sistema. Deseja reconfirmar a entrega?")) {

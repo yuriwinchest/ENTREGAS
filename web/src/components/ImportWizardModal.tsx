@@ -23,8 +23,9 @@ import {
   PlusCircle,
   Link as LinkIcon
 } from "lucide-react";
-import { Participant, EventItem } from "../types";
+import { EventItem } from "../types";
 import { api } from "../lib/appwrite";
+import { runBulkOperation } from "../hooks/useLiveSync";
 
 // Campos do Sistema disponíveis para mapeamento
 export type TargetField = 
@@ -62,6 +63,20 @@ const TARGET_FIELDS: TargetFieldOption[] = [
   { key: "qr_code", label: "QR Code / Voucher", shortLabel: "QR Code", icon: <QrCode className="w-3.5 h-3.5" />, color: "text-teal-300 bg-teal-500/20 border-teal-500/40", description: "Código para leitura via scanner / QR" },
   { key: "category", label: "Categoria / Faixa", shortLabel: "Categoria", icon: <Award className="w-3.5 h-3.5" />, color: "text-orange-300 bg-orange-500/20 border-orange-500/40", description: "Geral, 20-29, 30-39, PCD, etc." },
 ];
+
+/** Linha da planilha já mapeada para os campos do sistema. */
+interface LinhaImportada {
+  bib_number: string;
+  chip: string;
+  name: string;
+  birth_date: string;
+  modality: string;
+  shirt: string;
+  cpf: string;
+  sex: string;
+  qr_code: string;
+  category: string;
+}
 
 interface ImportWizardModalProps {
   workbook: XLSX.WorkBook | null;
@@ -165,6 +180,14 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
   // Formatação de data brasileira segura
   const formatBirthDate = (raw: any): string => {
     if (!raw) return "";
+
+    // A planilha é lida com `cellDates: true`, então datas chegam como Date.
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+      const dd = String(raw.getDate()).padStart(2, "0");
+      const mm = String(raw.getMonth() + 1).padStart(2, "0");
+      return `${dd}/${mm}/${raw.getFullYear()}`;
+    }
+
     if (typeof raw === "number" && raw > 1000) {
       try {
         const d = XLSX.SSF.parse_date_code(raw);
@@ -189,7 +212,7 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
 
   // Converte as linhas brutas nos objetos Participant usando o mapeamento configurado
   const mappedParticipants = useMemo(() => {
-    const results: Array<Omit<Participant, "$id">> = [];
+    const results: LinhaImportada[] = [];
 
     dataRows.forEach((row, rowIdx) => {
       // Ignora linha se estiver completamente vazia
@@ -270,6 +293,11 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
     setImportProgress({ current: 0, total: mappedParticipants.length });
 
     try {
+      // A importação inteira roda com a sincronização automática suspensa.
+      // Antes, cada atleta gravado disparava um recarregamento completo pelo
+      // realtime — milhares de requisições concorrentes travavam a aba e a
+      // tela ficava girando indefinidamente. Ao final, uma única atualização.
+      await runBulkOperation(async () => {
       let finalEvent: EventItem;
 
       // 1. Obter ou Criar o Evento no Appwrite
@@ -311,6 +339,7 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
       } else {
         alert(`Atenção: Nenhum atleta foi inserido (${res.errors} erros). Verifique a conexão ou os dados da planilha.`);
       }
+      });
     } catch (err: any) {
       console.error("Falha na importação:", err);
       alert(`Erro ao importar para a nuvem: ${err?.message || "Falha de comunicação com o banco de dados."}`);

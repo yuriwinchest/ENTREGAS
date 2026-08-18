@@ -15,8 +15,9 @@ interface EventTabsBarProps {
   events: EventItem[];
   activeEvent: EventItem | null;
   onSelectEvent: (event: EventItem | null) => void;
-  onOpenEventManager: () => void;
-  onOpenImportModal: () => void;
+  /** Opcionais: quando o usuário não tem a permissão, o botão nem aparece. */
+  onOpenEventManager?: () => void;
+  onOpenImportModal?: () => void;
 }
 
 export const EventTabsBar: React.FC<EventTabsBarProps> = ({
@@ -118,24 +119,30 @@ export const EventTabsBar: React.FC<EventTabsBarProps> = ({
       </div>
 
       {/* Ações Rápidas no Canto Direito */}
-      <div className="flex items-center gap-2 shrink-0 ml-auto pl-2 border-l border-slate-800">
-        <button
-          onClick={onOpenImportModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold shadow-sm transition-all"
-          title="Importar nova planilha Excel ou CSV"
-        >
-          <FileSpreadsheet className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Anexar Nova Tabela</span>
-        </button>
+      {(onOpenImportModal || onOpenEventManager) && (
+        <div className="flex items-center gap-2 shrink-0 ml-auto pl-2 border-l border-slate-800">
+          {onOpenImportModal && (
+            <button
+              onClick={onOpenImportModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold shadow-sm transition-all"
+              title="Importar nova planilha Excel ou CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Anexar Nova Tabela</span>
+            </button>
+          )}
 
-        <button
-          onClick={onOpenEventManager}
-          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors border border-slate-700/60"
-          title="Gerenciar Eventos e Tabelas"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-      </div>
+          {onOpenEventManager && (
+            <button
+              onClick={onOpenEventManager}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors border border-slate-700/60"
+              title="Gerenciar Eventos e Tabelas"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

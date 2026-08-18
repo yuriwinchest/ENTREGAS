@@ -24,6 +24,10 @@ jobs:
           npm install
           npm run build
 
+      # PENDENTE DE SEGURANÇA: cadastre o secret VPS_PASSWORD no repositório
+      # (Settings > Secrets and variables > Actions) e apague o valor reserva
+      # abaixo. Enquanto o secret não existir, a senha da VPS fica visível para
+      # qualquer pessoa com acesso ao repositório e precisa ser trocada depois.
       - name: Deploy Automático na VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:

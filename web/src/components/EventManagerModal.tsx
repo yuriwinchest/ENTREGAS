@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { EventItem } from "../types";
 import { api } from "../lib/appwrite";
+import { useSession } from "../lib/session";
+import { runBulkOperation } from "../hooks/useLiveSync";
 
 interface EventManagerModalProps {
   events: EventItem[];
@@ -34,6 +36,8 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
   onRefreshEvents,
   onClose
 }) => {
+  const { can } = useSession();
+
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDate, setNewDate] = useState("");
@@ -107,9 +111,11 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
     setDeletingLoading(true);
     setDeleteProgress({ current: 0, total: eventToDelete.total_athletes || 100 });
     try {
-      await api.deleteEvent(eventToDelete.$id, (curr, tot) => {
-        setDeleteProgress({ current: curr, total: tot });
-      });
+      await runBulkOperation(() =>
+        api.deleteEvent(eventToDelete.$id, (curr, tot) => {
+          setDeleteProgress({ current: curr, total: tot });
+        })
+      );
 
       if (activeEventId === eventToDelete.$id) {
         onSelectEvent(null);
@@ -170,6 +176,7 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
             </button>
           </div>
 
+          {can("event.create") && (
           <button
             onClick={() => {
               setIsCreating(true);
@@ -180,6 +187,7 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
             <Plus className="w-4 h-4" />
             Novo Evento
           </button>
+          )}
         </div>
 
         {/* Body Content */}
@@ -387,6 +395,7 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
                         </span>
                       )}
 
+                      {can("event.edit") && (
                       <button
                         onClick={() => {
                           setEditingEvent(ev);
@@ -400,7 +409,9 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
+                      )}
 
+                      {can("event.delete") && (
                       <button
                         onClick={() => setEventToDelete(ev)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
@@ -408,6 +419,7 @@ export const EventManagerModal: React.FC<EventManagerModalProps> = ({
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                      )}
                     </div>
                   </div>
                 );

@@ -31,6 +31,8 @@ import {
 import * as XLSX from "xlsx";
 import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
+import { useSession } from "../lib/session";
+import { runBulkOperation } from "../hooks/useLiveSync";
 import { QRCodeModal } from "./QRCodeModal";
 import { EditAthleteModal } from "./EditAthleteModal";
 import { ImportWizardModal } from "./ImportWizardModal";
@@ -49,9 +51,15 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   onSelectEvent,
   onRefreshEvents
 }) => {
+  const { can } = useSession();
+
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Descarta respostas antigas que cheguem fora de ordem após trocas rápidas
+  // de filtro/busca — era uma das causas da lista "travada" carregando.
+  const requisicaoAtual = useRef(0);
   const [filter, setFilter] = useState<"all" | "delivered" | "pending">("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -89,7 +97,9 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   const [resetProgress, setResetProgress] = useState({ current: 0, total: 0 });
 
   const loadData = async () => {
+    const idDaRequisicao = ++requisicaoAtual.current;
     setLoading(true);
+
     try {
       const res = await api.listParticipants({
         limit,
@@ -99,12 +109,15 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
         search: search.trim() || undefined,
         eventId: activeEvent ? activeEvent.$id : undefined
       });
+
+      if (idDaRequisicao !== requisicaoAtual.current) return;
+
       setParticipants(res.documents);
       setTotalCount(res.total);
     } catch (err) {
-      console.error("Erro ao carregar participantes:", err);
+      console.error("Erro ao carregar atletas:", err);
     } finally {
-      setLoading(false);
+      if (idDaRequisicao === requisicaoAtual.current) setLoading(false);
     }
   };
 
@@ -118,6 +131,9 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   // Handle Excel/CSV file upload via Interactive Wizard
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Zerar o valor permite reanexar o MESMO arquivo em seguida — sem isso o
+    // segundo clique não disparava evento algum e nada acontecia na tela.
+    e.target.value = "";
     if (!file) return;
 
     setImportFileName(file.name);
@@ -125,8 +141,8 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: "binary", cellDates: true });
+        const bytes = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const wb = XLSX.read(bytes, { type: "array", cellDates: true });
         if (!wb.SheetNames || wb.SheetNames.length === 0) {
           alert("O arquivo não possui planilhas legíveis.");
           return;
@@ -138,7 +154,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
         alert("Erro ao ler o arquivo selecionado. Formatos suportados: .xlsx, .xls, .csv");
       }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   };
 
   // Excluir Atleta Individual
@@ -170,9 +186,13 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     const targetEventId = deleteMode === "event_only" && activeEvent ? activeEvent.$id : undefined;
 
     try {
-      const res = await api.deleteAllParticipants(targetEventId, (curr, tot) => {
-        setDeleteProgress({ current: curr, total: tot });
-      });
+      // Suspende a sincronização automática: sem isso, cada documento excluído
+      // dispararia uma recarga completa e a tela travava até o fim do lote.
+      const res = await runBulkOperation(() =>
+        api.deleteAllParticipants(targetEventId, (curr, tot) => {
+          setDeleteProgress({ current: curr, total: tot });
+        })
+      );
 
       alert(`Exclusão concluída com sucesso!\n✓ ${res.deleted} atletas excluídos com alta performance.`);
       setIsDeleteAllModalOpen(false);
@@ -197,9 +217,11 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
     const targetEventId = activeEvent ? activeEvent.$id : undefined;
 
     try {
-      const res = await api.resetAllDeliveries(targetEventId, (curr, tot) => {
-        setResetProgress({ current: curr, total: tot });
-      });
+      const res = await runBulkOperation(() =>
+        api.resetAllDeliveries(targetEventId, (curr, tot) => {
+          setResetProgress({ current: curr, total: tot });
+        })
+      );
 
       alert(`Status de entrega resetado com sucesso!\n✓ ${res.reset} atletas retornaram para 'Pendente'.`);
       setIsResetDeliveriesModalOpen(false);
@@ -277,14 +299,17 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             className="hidden"
           />
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-brand-500/20 transition-all cursor-pointer"
-          >
-            <Upload className="w-4 h-4" />
-            Anexar Planilha (Excel / CSV)
-          </button>
+          {can("athlete.import") && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-brand-500/20 transition-all cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              Anexar Planilha (Excel / CSV)
+            </button>
+          )}
 
+          {can("athlete.export") && (
           <button
             onClick={exportToExcel}
             className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-all"
@@ -292,8 +317,10 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             <Download className="w-4 h-4 text-emerald-400" />
             Exportar Relatório
           </button>
+          )}
 
           {/* Resetar Entregas */}
+          {can("data.reset") && (
           <button
             onClick={() => setIsResetDeliveriesModalOpen(true)}
             title="Resetar status de entrega para pendente"
@@ -302,8 +329,10 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             <RotateCcw className="w-3.5 h-3.5" />
             Resetar Entregas
           </button>
+          )}
 
           {/* Limpar Base */}
+          {can("data.purge") && (
           <button
             onClick={() => {
               setDeleteConfirmText("");
@@ -316,6 +345,7 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
             <Trash2 className="w-4 h-4 text-rose-400" />
             Excluir / Limpar
           </button>
+          )}
         </div>
       </div>
 
@@ -541,20 +571,24 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                             <Printer className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <button
-                          onClick={() => setEditingAthlete(p)}
-                          title="Editar dados do atleta"
-                          className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-brand-500 text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 transition-all cursor-pointer"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setAthleteToDelete(p)}
-                          title="Excluir este atleta"
-                          className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {can("athlete.edit") && (
+                          <button
+                            onClick={() => setEditingAthlete(p)}
+                            title="Editar dados do atleta"
+                            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-brand-500 text-slate-400 hover:text-brand-400 hover:bg-brand-500/10 transition-all cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {can("athlete.delete") && (
+                          <button
+                            onClick={() => setAthleteToDelete(p)}
+                            title="Excluir este atleta"
+                            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

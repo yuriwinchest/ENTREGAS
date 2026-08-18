@@ -18,13 +18,9 @@ import { Models } from "appwrite";
 
 interface LoginScreenProps {
   onLoginSuccess: (user: Models.User<Models.Preferences>) => void;
-  onOpenTelao: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({
-  onLoginSuccess,
-  onOpenTelao
-}) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -59,12 +55,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickFillAline = () => {
-    setEmail("alinepedrosa001@gmail.com");
-    setPassword("Aline@20262026");
-    setError(null);
   };
 
   return (
@@ -170,18 +160,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </div>
             </div>
 
-            {/* Botão de Preenchimento Rápido para Aline */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleQuickFillAline}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 text-brand-300 text-xs font-medium transition-all"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-brand-400" />
-                <span>Preencher acesso de <strong>Aline Pedrosa</strong></span>
-              </button>
-            </div>
-
             {/* Botão de Login */}
             <button
               type="submit"
@@ -203,25 +181,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           </form>
 
-          {/* Divisor */}
-          <div className="relative my-6 text-center">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
-            </div>
-            <span className="relative px-3 bg-slate-900 text-xs text-slate-500 uppercase tracking-widest font-mono">
-              Ou
+          {/* Aviso de ambiente isolado */}
+          <div className="mt-6 pt-5 border-t border-slate-800 flex items-start gap-2.5 text-[11px] text-slate-500 leading-relaxed">
+            <UserCheck className="w-3.5 h-3.5 text-brand-500 shrink-0 mt-0.5" />
+            <span>
+              Cada acesso enxerga somente o ambiente e as tabelas liberados pelo administrador.
+              O Telão da tenda também abre por aqui, após entrar.
             </span>
           </div>
-
-          {/* Acesso Direto ao Telão TV */}
-          <button
-            type="button"
-            onClick={onOpenTelao}
-            className="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
-          >
-            <Tv className="w-4 h-4 text-brand-400" />
-            <span>Abrir Telão da Tenda (Modo TV sem login)</span>
-          </button>
 
         </div>
 
