@@ -109,17 +109,11 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
   };
 
   useEffect(() => {
-    loadData();
-  }, [page, filter, activeEvent]);
-
-  // Debounced search
-  useEffect(() => {
     const timer = setTimeout(() => {
-      setPage(0);
       loadData();
-    }, 300);
+    }, search ? 250 : 0);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [page, filter, activeEvent?.$id, search]);
 
   // Handle Excel/CSV file upload via Interactive Wizard
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

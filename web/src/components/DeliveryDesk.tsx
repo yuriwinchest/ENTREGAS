@@ -96,7 +96,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, activeEvent]);
+  }, [searchTerm, activeEvent?.$id]);
 
   const selectAthlete = (athlete: Participant) => {
     setSelectedAthlete(athlete);

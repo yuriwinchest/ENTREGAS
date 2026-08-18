@@ -28,9 +28,15 @@ export function App() {
 
   // Estados Globais de Eventos / Tabelas
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [isEventManagerOpen, setIsEventManagerOpen] = useState(false);
   const [isUserManagerOpen, setIsUserManagerOpen] = useState(false);
+
+  // Evento Ativo derivado de forma segura e memoizada por ID
+  const activeEvent = React.useMemo(() => {
+    if (!activeEventId) return null;
+    return events.find((e) => e.$id === activeEventId) || null;
+  }, [events, activeEventId]);
 
   // Importação Rápida Global de Planilhas
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -83,14 +89,13 @@ export function App() {
     try {
       const list = await api.listEvents();
       setEvents(list);
-      // Se não tem evento ativo e existem eventos cadastrados, ativa o primeiro mais recente
-      setActiveEvent((prev) => {
-        if (!prev && list.length > 0) return list[0];
-        if (prev) {
-          const updated = list.find((e) => e.$id === prev.$id);
-          return updated || null;
+      // Se não tem evento ativo e existem eventos cadastrados, ativa o primeiro
+      setActiveEventId((prev) => {
+        if (!prev && list.length > 0) return list[0].$id;
+        if (prev && !list.some((e) => e.$id === prev)) {
+          return list.length > 0 ? list[0].$id : null;
         }
-        return null;
+        return prev;
       });
     } catch (err) {
       console.error("Erro ao carregar eventos:", err);
@@ -98,12 +103,12 @@ export function App() {
   };
 
   // Carregar dados da nuvem (estatísticas segregadas pelo evento ativo)
-  const refreshData = async () => {
+  const refreshData = async (targetId?: string | null) => {
     try {
-      const activeId = activeEvent ? activeEvent.$id : undefined;
+      const eventIdToQuery = targetId !== undefined ? targetId : activeEventId;
       const [s, rec, set] = await Promise.all([
-        api.getStats(activeId),
-        api.getRecentDeliveries(10, activeId),
+        api.getStats(eventIdToQuery || undefined),
+        api.getRecentDeliveries(10, eventIdToQuery || undefined),
         api.getSettings()
       ]);
       setStats(s);
@@ -116,24 +121,25 @@ export function App() {
     }
   };
 
+  // Efeito principal: Carga inicial, Polling e Realtime
   useEffect(() => {
     // Sincroniza dados da nuvem apenas se houver usuário autenticado ou no modo Telão
     if (!user && currentTab !== "telao") return;
 
     loadEvents();
-    refreshData();
+    refreshData(activeEventId);
 
-    // Polling inteligente a cada 4s para sincronização contínua
+    // Polling inteligente a cada 5s para sincronização contínua
     const interval = setInterval(() => {
-      refreshData();
-    }, 4000);
+      refreshData(activeEventId);
+    }, 5000);
 
     // Inscrição Realtime no Appwrite para push instantâneo
     try {
       const unsubscribe = client.subscribe(
         `databases.${DATABASE_ID}.collections.${COLLECTIONS.PARTICIPANTS}.documents`,
         () => {
-          refreshData();
+          refreshData(activeEventId);
           loadEvents();
         }
       );
@@ -144,7 +150,14 @@ export function App() {
     } catch {
       return () => clearInterval(interval);
     }
-  }, [user, currentTab, activeEvent]);
+  }, [user, currentTab]);
+
+  // Efeito dedicado quando o usuário troca de evento ativo
+  useEffect(() => {
+    if (user || currentTab === "telao") {
+      refreshData(activeEventId);
+    }
+  }, [activeEventId]);
 
   // Logout
   const handleLogout = async () => {
@@ -241,7 +254,7 @@ export function App() {
         events={events}
         activeEvent={activeEvent}
         onSelectEvent={(ev) => {
-          setActiveEvent(ev);
+          setActiveEventId(ev ? ev.$id : null);
         }}
         onOpenEventManager={() => setIsEventManagerOpen(true)}
       />
@@ -250,7 +263,7 @@ export function App() {
       <EventTabsBar
         events={events}
         activeEvent={activeEvent}
-        onSelectEvent={(ev) => setActiveEvent(ev)}
+        onSelectEvent={(ev) => setActiveEventId(ev ? ev.$id : null)}
         onOpenEventManager={() => setIsEventManagerOpen(true)}
         onOpenImportModal={() => fileInputRef.current?.click()}
       />
@@ -268,7 +281,7 @@ export function App() {
         {currentTab === "desk" && (
           <DeliveryDesk
             operatorName={operatorName}
-            onDeliveryComplete={refreshData}
+            onDeliveryComplete={() => refreshData(activeEventId)}
             recentDeliveries={recentDeliveries}
             activeEvent={activeEvent}
           />
@@ -278,10 +291,10 @@ export function App() {
           <ParticipantsManager
             events={events}
             activeEvent={activeEvent}
-            onSelectEvent={(ev) => setActiveEvent(ev)}
+            onSelectEvent={(ev) => setActiveEventId(ev ? ev.$id : null)}
             onRefreshEvents={() => {
               loadEvents();
-              refreshData();
+              refreshData(activeEventId);
             }}
           />
         )}
@@ -299,14 +312,14 @@ export function App() {
       {isEventManagerOpen && (
         <EventManagerModal
           events={events}
-          activeEventId={activeEvent?.$id || null}
+          activeEventId={activeEventId}
           onSelectEvent={(ev) => {
-            setActiveEvent(ev);
+            setActiveEventId(ev ? ev.$id : null);
             setIsEventManagerOpen(false);
           }}
           onRefreshEvents={() => {
             loadEvents();
-            refreshData();
+            refreshData(activeEventId);
           }}
           onClose={() => setIsEventManagerOpen(false)}
         />
@@ -325,7 +338,7 @@ export function App() {
           workbook={importWorkbook}
           fileName={importFileName}
           existingEvents={events}
-          activeEventId={activeEvent?.$id || null}
+          activeEventId={activeEventId}
           onClose={() => {
             setIsImportModalOpen(false);
             setImportWorkbook(null);
@@ -337,9 +350,9 @@ export function App() {
             setImportFileName("");
             loadEvents();
             if (newEvent) {
-              setActiveEvent(newEvent);
+              setActiveEventId(newEvent.$id);
             }
-            refreshData();
+            refreshData(newEvent ? newEvent.$id : activeEventId);
           }}
         />
       )}
