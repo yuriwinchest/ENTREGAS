@@ -116,6 +116,10 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
   });
   const [selectedExistingId, setSelectedExistingId] = useState<string>(activeEventId || (existingEvents[0]?.$id || ""));
 
+  // O que fazer com quem já está cadastrado no evento. Só aparece ao
+  // complementar uma tabela existente — é o caso de "chegaram mais inscritos".
+  const [duplicados, setDuplicados] = useState<"ignorar" | "atualizar">("ignorar");
+
   // Inicializa a planilha ao carregar o arquivo
   useEffect(() => {
     if (!workbook || workbook.SheetNames.length === 0) return;
@@ -480,6 +484,43 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({
                     </option>
                   ))}
                 </select>
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  Os atletas desta planilha serão <strong className="text-slate-200">somados</strong> aos que já
+                  estão na tabela.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Quem já está cadastrado
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDuplicados("ignorar")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      duplicados === "ignorar"
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-300"
+                        : "bg-slate-950 border-slate-700 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    Manter como está
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuplicados("atualizar")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      duplicados === "atualizar"
+                        ? "bg-amber-500/20 border-amber-500 text-amber-300"
+                        : "bg-slate-950 border-slate-700 text-slate-400 hover:bg-slate-800"
+                    }`}
+                  >
+                    Atualizar dados
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1.5">
+                  Conferido pelo número de peito. Ninguém entra duas vezes.
+                </p>
               </div>
             </div>
           )}

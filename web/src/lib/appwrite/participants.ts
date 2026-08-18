@@ -1,7 +1,7 @@
 import { Query, ID } from "appwrite";
 import { databases, DATABASE_ID, COLLECTIONS, normalizeFolded, runConcurrentPool } from "./client";
 import { requireTenant, tenantScope, eventScope, tenantDocumentPermissions } from "./tenancy";
-import { createDocumentsInBatches } from "./bulk";
+import { createDocumentsInBatches, DocumentoParaCriar } from "./bulk";
 import { adminApi } from "../adminApi";
 import { Participant, DeliveryStats } from "../../types";
 
@@ -75,6 +75,37 @@ async function buscarPorCampo(
     console.error(`Erro ao buscar atleta por ${campo}:`, err);
     return null;
   }
+}
+
+/**
+ * Carrega os números de peito já cadastrados num evento.
+ *
+ * É o que permite COMPLEMENTAR uma tabela sem duplicar: a planilha nova quase
+ * sempre repete quem já está lá, e sem esta conferência o mesmo atleta entrava
+ * duas vezes.
+ */
+async function carregarNumerosDoEvento(eventId: string): Promise<Map<string, string>> {
+  const porNumero = new Map<string, string>();
+  let offset = 0;
+
+  for (;;) {
+    const pagina = await databases.listDocuments<Participant>(DATABASE_ID, COLLECTIONS.PARTICIPANTS, [
+      ...tenantScope(),
+      Query.equal("event_id", eventId),
+      Query.select(["$id", "bib_number"]),
+      Query.limit(1000),
+      Query.offset(offset)
+    ]);
+
+    for (const doc of pagina.documents) {
+      if (doc.bib_number) porNumero.set(String(doc.bib_number).trim(), doc.$id);
+    }
+
+    if (pagina.documents.length < 1000) break;
+    offset += 1000;
+  }
+
+  return porNumero;
 }
 
 export const participantsApi = {
@@ -286,7 +317,19 @@ export const participantsApi = {
     }
   },
 
-  /** Importação em lote de uma planilha já mapeada, sempre vinculada a um evento. */
+  /**
+   * Importa uma planilha já mapeada para dentro de um evento.
+   *
+   * Complementar uma tabela é o caso normal: chega uma lista nova com os
+   * inscritos de última hora e ela quase sempre repete quem já estava lá. Por
+   * isso a importação confere os números de peito que já existem no evento e
+   * decide o que fazer com os repetidos conforme `duplicados`:
+   *
+   *   "ignorar"   (padrão) — mantém o cadastro atual e insere só os novos;
+   *   "atualizar"          — sobrescreve os dados de quem já existe;
+   *
+   * Em qualquer um dos dois, ninguém entra duas vezes.
+   */
   async batchImportParticipants(
     lista: Array<{
       bib_number: string;
@@ -302,19 +345,18 @@ export const participantsApi = {
     }>,
     eventId: string,
     eventName: string,
-    onProgress?: (current: number, total: number) => void
-  ): Promise<{ inserted: number; errors: number }> {
+    onProgress?: (current: number, total: number) => void,
+    duplicados: "ignorar" | "atualizar" = "ignorar"
+  ): Promise<{ inserted: number; updated: number; skipped: number; errors: number }> {
     const tenant = requireTenant();
     const permissoes = tenantDocumentPermissions();
 
-    const documentos = lista.map((p) => {
+    const montarCampos = (p: (typeof lista)[number]) => {
       const bib = texto(p.bib_number, 30) || "0";
       const chip = (texto(p.chip, 60) || bib).toUpperCase();
       const nome = (texto(p.name, 250) || "ATLETA").toUpperCase();
 
       return {
-        $id: ID.unique(),
-        $permissions: permissoes,
         bib_number: bib,
         chip,
         name: nome,
@@ -329,23 +371,76 @@ export const participantsApi = {
         event_id: eventId,
         event_name: eventName,
         tenant_id: tenant.tenantId,
-        owner_id: tenant.userId,
-        delivered_at: null,
-        receiver_name: null
+        owner_id: tenant.userId
       };
+    };
+
+    // A própria planilha pode repetir um número; vence a última ocorrência.
+    const porNumeroNaPlanilha = new Map<string, ReturnType<typeof montarCampos>>();
+    for (const linha of lista) {
+      const campos = montarCampos(linha);
+      porNumeroNaPlanilha.set(campos.bib_number, campos);
+    }
+
+    const jaCadastrados = await carregarNumerosDoEvento(eventId);
+
+    const novos: DocumentoParaCriar[] = [];
+    const paraAtualizar: Array<{ id: string; campos: ReturnType<typeof montarCampos> }> = [];
+    let skipped = 0;
+
+    for (const [bib, campos] of porNumeroNaPlanilha) {
+      const existente = jaCadastrados.get(bib);
+
+      if (!existente) {
+        novos.push({
+          $id: ID.unique(),
+          $permissions: permissoes,
+          ...campos,
+          delivered_at: null,
+          receiver_name: null
+        });
+        continue;
+      }
+
+      if (duplicados === "atualizar") paraAtualizar.push({ id: existente, campos });
+      else skipped++;
+    }
+
+    const total = novos.length + paraAtualizar.length;
+    let concluidos = 0;
+    let updated = 0;
+    let errors = 0;
+
+    // Inserção dos novos em lotes de 100.
+    const resultado = await createDocumentsInBatches(COLLECTIONS.PARTICIPANTS, novos, (feitos) => {
+      concluidos = feitos;
+      onProgress?.(concluidos, total || 1);
     });
 
-    // Gravação em lotes de 100. Uma planilha de 2 mil atletas sai em 20
-    // requisições no lugar de 2 mil — era esse round-trip por linha que fazia
-    // a importação demorar minutos.
-    const { inserted, errors, requisicoes } = await createDocumentsInBatches(
-      COLLECTIONS.PARTICIPANTS,
-      documentos,
-      onProgress
+    errors += resultado.errors;
+
+    // Atualização dos repetidos, quando o operador pediu para sobrescrever.
+    if (paraAtualizar.length > 0) {
+      await runConcurrentPool(paraAtualizar, 25, async (item) => {
+        try {
+          const { event_id, tenant_id, owner_id, ...atualizaveis } = item.campos;
+          await databases.updateDocument(DATABASE_ID, COLLECTIONS.PARTICIPANTS, item.id, atualizaveis);
+          updated++;
+        } catch (err) {
+          console.warn(`Não foi possível atualizar o atleta #${item.campos.bib_number}:`, err);
+          errors++;
+        } finally {
+          concluidos++;
+          onProgress?.(concluidos, total || 1);
+        }
+      });
+    }
+
+    console.info(
+      `Importação: ${resultado.inserted} novo(s) em ${resultado.requisicoes} requisição(ões), ` +
+        `${updated} atualizado(s), ${skipped} já cadastrado(s).`
     );
 
-    console.info(`Importação: ${inserted} atletas em ${requisicoes} requisição(ões).`);
-
-    return { inserted, errors };
+    return { inserted: resultado.inserted, updated, skipped, errors };
   }
 };
