@@ -61,10 +61,14 @@ export const DeliveryReceiptModal: React.FC<DeliveryReceiptModalProps> = ({
     : new Date().toLocaleString("pt-BR");
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static">
-      
+    // O comprovante é mais alto que a tela em notebook e tablet. O scroll fica
+    // no fundo do modal e o cartão se centraliza só quando cabe — sem isso o
+    // rodapé com o QR e a linha de assinatura ficava cortado e inalcançável.
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md overflow-y-auto print:overflow-visible print:bg-white print:static">
+      <div className="min-h-full flex items-center justify-center p-3 sm:p-6 print:block print:p-0 print:min-h-0">
+
       {/* Container Principal */}
-      <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-700 bg-slate-900 shadow-2xl space-y-6 animate-scale-in text-slate-100 relative print:border-none print:shadow-none print:bg-white print:text-black print:p-0 print:m-0 print:max-w-none">
+      <div className="glass-card rounded-3xl p-5 sm:p-8 max-w-lg w-full border border-slate-700 bg-slate-900 shadow-2xl space-y-5 sm:space-y-6 animate-scale-in text-slate-100 relative my-auto print:border-none print:shadow-none print:bg-white print:text-black print:p-0 print:m-0 print:max-w-none">
         
         {/* Close Button (Hidden on Print) */}
         <button
@@ -225,6 +229,7 @@ export const DeliveryReceiptModal: React.FC<DeliveryReceiptModalProps> = ({
           </button>
         </div>
 
+      </div>
       </div>
     </div>
   );

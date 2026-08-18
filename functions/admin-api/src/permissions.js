@@ -30,12 +30,12 @@ export const ADMIN_ONLY_KEYS = ["team.manage", "tab.settings", "event.view_all"]
 
 export const ADMIN_PERMISSIONS = [...PERMISSION_KEYS];
 
+/** Mínimo para trabalhar o balcão: pesquisar, confirmar e anexar a planilha. */
 export const DEFAULT_OPERATOR_PERMISSIONS = [
   "tab.desk",
-  "tab.telao",
+  "delivery.confirm",
   "tab.participants",
-  "athlete.export",
-  "delivery.confirm"
+  "athlete.import"
 ];
 
 /** Remove chaves desconhecidas e — para não-admin — as exclusivas de admin. */

@@ -51,8 +51,12 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ athlete, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-700 bg-slate-900 shadow-2xl space-y-6 animate-scale-in text-slate-100 relative">
+    // O modal rola junto com o fundo: em tela baixa (notebook, tablet do
+    // balcão) o conteúdo passava do viewport e ficava cortado sem chance de
+    // rolar, escondendo justamente o QR e os dados do atleta.
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center p-4">
+      <div className="glass-card rounded-3xl p-5 sm:p-8 max-w-md w-full border border-slate-700 bg-slate-900 shadow-2xl space-y-5 sm:space-y-6 animate-scale-in text-slate-100 relative my-auto">
         
         {/* Close button */}
         <button
@@ -78,15 +82,15 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ athlete, onClose }) =>
         </div>
 
         {/* QR Code Container */}
-        <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-inner border border-slate-200">
+        <div className="flex flex-col items-center justify-center bg-white p-4 sm:p-6 rounded-2xl shadow-inner border border-slate-200">
           {qrDataUrl ? (
             <img 
               src={qrDataUrl} 
               alt={`QR Code - ${athlete.name}`} 
-              className="w-52 h-52 object-contain"
+              className="w-40 h-40 sm:w-52 sm:h-52 object-contain"
             />
           ) : (
-            <div className="w-52 h-52 flex items-center justify-center text-slate-400 text-xs">
+            <div className="w-40 h-40 sm:w-52 sm:h-52 flex items-center justify-center text-slate-400 text-xs">
               Gerando QR Code...
             </div>
           )}
@@ -186,6 +190,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ athlete, onClose }) =>
           </a>
         </div>
 
+      </div>
       </div>
     </div>
   );

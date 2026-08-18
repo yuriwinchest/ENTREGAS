@@ -152,12 +152,19 @@ export const PERMISSION_GROUPS = [
 
 export const ADMIN_PERMISSIONS: PermissionKey[] = PERMISSIONS.map((p) => p.key);
 
+/**
+ * O que um operador de balcão recebe por padrão.
+ *
+ * É o mínimo para trabalhar a fila: abrir o balcão, pesquisar o atleta,
+ * confirmar a entrega e anexar a planilha do evento dele. Configurações,
+ * gestão de equipe, exclusão em massa e reset ficam fora — a Aline concede
+ * caso a caso na matriz de permissões.
+ */
 export const DEFAULT_OPERATOR_PERMISSIONS: PermissionKey[] = [
   "tab.desk",
-  "tab.telao",
+  "delivery.confirm",
   "tab.participants",
-  "athlete.export",
-  "delivery.confirm"
+  "athlete.import"
 ];
 
 export const permissionsByGroup = (group: string) => PERMISSIONS.filter((p) => p.group === group);
