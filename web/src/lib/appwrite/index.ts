@@ -29,6 +29,9 @@ export { auth } from "./auth";
 
 export { createDocumentsInBatches } from "./bulk";
 
+export { carregarContextoDaSessao } from "./sessionContext";
+export type { ContextoDaSessao } from "./sessionContext";
+
 export {
   setTenantContext,
   getTenantContext,

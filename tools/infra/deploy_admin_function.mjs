@@ -29,7 +29,7 @@ async function garantirFunction() {
       name: "CHIPOWER Admin API",
       runtime: "node-22",
       execute: ["users"],
-      timeout: 30,
+      timeout: 15,
       logging: true,
       entrypoint: "src/main.js",
       commands: "npm install"
@@ -41,7 +41,7 @@ async function garantirFunction() {
       name: "CHIPOWER Admin API",
       runtime: "node-22",
       execute: ["users"],
-      timeout: 30,
+      timeout: 15,
       logging: true,
       entrypoint: "src/main.js",
       commands: "npm install"

@@ -1,7 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Models } from "appwrite";
-import { adminApi, SessionBootstrap } from "./adminApi";
-import { setTenantContext } from "./appwrite";
+import { carregarContextoDaSessao, ContextoDaSessao, setTenantContext } from "./appwrite";
 import { PermissionKey } from "./permissions";
 
 /**
@@ -13,8 +12,8 @@ import { PermissionKey } from "./permissions";
 
 export interface Session {
   user: Models.User<Models.Preferences>;
-  tenant: SessionBootstrap["tenant"];
-  operator: SessionBootstrap["operator"];
+  tenant: ContextoDaSessao["tenant"];
+  operator: ContextoDaSessao["operator"];
   permissions: PermissionKey[];
   provisioned: boolean;
   isAdmin: boolean;
@@ -64,7 +63,9 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ user, children
     setError(null);
 
     try {
-      const dados = await adminApi.bootstrap();
+      // Duas leituras diretas (~60ms cada) no lugar de uma execução síncrona
+      // da Function, que travava o login por até 30s quando engasgava.
+      const dados = await carregarContextoDaSessao(user);
       if (carga !== cargaAtual.current) return;
 
       const nova: Session = {

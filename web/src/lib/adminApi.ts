@@ -36,7 +36,10 @@ export class AdminApiError extends Error {
  * As duas são transitórias e valem uma nova tentativa; qualquer outra falha
  * sobe na hora, porque insistir num erro real só atrasa o operador.
  */
-const TENTATIVAS = 3;
+// Duas tentativas, não três: quando a execução trava ela só volta no timeout
+// do servidor (~30s), e três tentativas faziam o pior caso passar de 90s.
+// Aqui só sobraram ações de administrador, raras e tolerantes a espera.
+const TENTATIVAS = 2;
 const ESPERA_ENTRE_TENTATIVAS_MS = 1500;
 
 const ehTimeoutDeColdStart = (err: any) =>
