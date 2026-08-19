@@ -22,6 +22,7 @@ import confetti from "canvas-confetti";
 import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
 import { useSession } from "../lib/session";
+import { DeskAthleteList } from "./DeskAthleteList";
 import { sounds } from "../lib/audio";
 import { QRCodeModal } from "./QRCodeModal";
 import { DeliveryReceiptModal } from "./DeliveryReceiptModal";
@@ -49,6 +50,9 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
   const [loading, setLoading] = useState(false);
   const [delivering, setDelivering] = useState(false);
   const [lastDelivered, setLastDelivered] = useState<Participant | null>(null);
+
+  // Incrementado a cada entrega para a lista do balcão se atualizar sozinha.
+  const [versaoDaLista, setVersaoDaLista] = useState(0);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [receiptAthlete, setReceiptAthlete] = useState<Participant | null>(null);
 
@@ -153,6 +157,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
 
         setLastDelivered(res.participant);
         setReceiptAthlete(res.participant);
+        setVersaoDaLista((v) => v + 1);
         onDeliveryComplete();
         clearSelection();
       }
@@ -490,18 +495,14 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
 
           </div>
         ) : (
-          /* Estado Vazio de Espera */
-          <div className="glass-card rounded-2xl p-12 border border-slate-800/80 text-center flex flex-col items-center justify-center min-h-[320px]">
-            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-4">
-              <Search className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-300">
-              Aguardando Leitura ou Pesquisa
-            </h3>
-            <p className="text-sm text-slate-500 max-w-sm mt-1">
-              Aproxime a tag RFID no leitor, passe o código de barras ou digite o número de peito/nome do atleta acima.
-            </p>
-          </div>
+          /* Sem atleta selecionado: a fila de trabalho fica à mão.
+             Antes aqui havia só um aviso "aguardando pesquisa", que deixava o
+             operador sem saída quando o atleta chega sem saber o número. */
+          <DeskAthleteList
+            activeEvent={activeEvent}
+            versao={versaoDaLista}
+            onSelecionar={selectAthlete}
+          />
         )}
 
         {/* Última entrega com sucesso (Feedback Toast) */}
