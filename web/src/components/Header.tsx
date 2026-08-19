@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all max-w-[260px] truncate ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all max-w-[340px] ${
                     activeEvent
                       ? "bg-brand-950/40 border-brand-500/40 text-brand-300 hover:bg-brand-900/40"
                       : "bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800"
@@ -152,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
                   title="Alternar o evento/tabela ativo"
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-                  <span className="truncate font-display">
+                  <span className="truncate font-display" title={activeEvent ? activeEvent.name : "Todas as Tabelas"}>
                     {activeEvent ? activeEvent.name : "Todas as Tabelas"}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />

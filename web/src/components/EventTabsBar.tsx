@@ -94,7 +94,7 @@ export const EventTabsBar: React.FC<EventTabsBarProps> = ({
   return (
     <div className="w-full bg-slate-900/95 border-b border-slate-800/80 backdrop-blur-md shadow-inner">
       <div className="px-4 sm:px-6 py-2.5 flex items-start justify-between gap-4">
-        <div className="flex items-start gap-2 min-w-0 overflow-x-auto no-scrollbar pb-0.5">
+        <div className="flex items-start gap-2 min-w-0 flex-1 overflow-x-auto no-scrollbar pb-1 pr-2">
           <div className="flex items-center gap-1.5 pr-2.5 mr-1 border-r border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider self-stretch shrink-0">
             <Layers className="w-4 h-4 text-slate-400" />
             <span className="hidden md:inline">Tabelas</span>
@@ -162,8 +162,10 @@ export const EventTabsBar: React.FC<EventTabsBarProps> = ({
                       {iniciaisDoEvento(event.name)}
                     </span>
 
+                    {/* Nome completo em até duas linhas: truncar em 190px
+                        escondia justamente o que diferencia as tabelas. */}
                     <span
-                      className={`text-xs font-bold max-w-[190px] truncate ${
+                      className={`text-xs font-bold leading-tight max-w-[260px] line-clamp-2 ${
                         ativo ? paleta.ativoTexto : "text-slate-300"
                       }`}
                     >
@@ -221,7 +223,7 @@ export const EventTabsBar: React.FC<EventTabsBarProps> = ({
         </div>
 
         {(onOpenImportModal || onOpenEventManager) && (
-          <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-slate-800 self-center">
+          <div className="flex items-center gap-2 shrink-0 pl-3 ml-1 border-l border-slate-800 self-center">
             {onOpenImportModal && (
               <button
                 onClick={onOpenImportModal}

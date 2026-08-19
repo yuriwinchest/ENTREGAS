@@ -15,6 +15,21 @@ const texto = (valor?: string | number | null, max = 250): string | null => {
 
 const doisDigitos = (n: number) => String(n).padStart(2, "0");
 
+/**
+ * Valor numérico usado só para ordenar a lista de atletas.
+ *
+ * O número de peito é texto porque nem sempre é só dígito ("12A", "E-45"), e
+ * ordenar texto no banco dá 1, 10, 100, 101, 11 — inconferível no balcão.
+ * Esta coluna paralela guarda apenas os dígitos, para a ordem sair de verdade.
+ */
+const ordemDoNumero = (bibNumber: string): number => {
+  const digitos = String(bibNumber ?? "").replace(/\D/g, "");
+  if (!digitos) return 0;
+
+  const valor = parseInt(digitos.slice(0, 9), 10);
+  return Number.isFinite(valor) ? valor : 0;
+};
+
 /** Converte Date, serial do Excel ou ISO para o formato brasileiro DD/MM/AAAA. */
 const formatarData = (valor?: any): string | null => {
   if (valor == null || valor === "") return null;
@@ -176,7 +191,9 @@ export const participantsApi = {
       ...eventScope(options?.eventId),
       Query.limit(options?.limit || 50),
       Query.offset(options?.offset || 0),
-      Query.orderDesc("$updatedAt")
+      // Ordem que o operador espera: do menor para o maior número de peito.
+      Query.orderAsc("bib_order"),
+      Query.orderAsc("bib_number")
     ];
 
     if (options?.deliveredOnly) queries.push(Query.isNotNull("delivered_at"));
@@ -238,7 +255,10 @@ export const participantsApi = {
   async updateParticipant(id: string, data: Partial<Participant>): Promise<Participant> {
     const payload: Record<string, any> = {};
 
-    if (data.bib_number !== undefined) payload.bib_number = texto(data.bib_number, 30);
+    if (data.bib_number !== undefined) {
+      payload.bib_number = texto(data.bib_number, 30);
+      payload.bib_order = ordemDoNumero(payload.bib_number || "");
+    }
     if (data.chip !== undefined) payload.chip = texto(String(data.chip).toUpperCase(), 60);
     if (data.name !== undefined) {
       payload.name = texto(String(data.name).toUpperCase(), 250);
@@ -358,6 +378,7 @@ export const participantsApi = {
 
       return {
         bib_number: bib,
+        bib_order: ordemDoNumero(bib),
         chip,
         name: nome,
         name_folded: normalizeFolded(nome),

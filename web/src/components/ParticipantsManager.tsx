@@ -486,8 +486,11 @@ export const ParticipantsManager: React.FC<ParticipantsManagerProps> = ({
                     </td>
 
                     {/* 4. Evento */}
-                    <td className="px-3.5 py-3 font-medium text-[11px] text-slate-300 max-w-[140px] truncate">
-                      <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300" title={p.event_name || "Geral"}>
+                    <td className="px-3.5 py-3 font-medium text-[11px] text-slate-300">
+                      <span
+                        className="inline-block max-w-[220px] truncate align-middle px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300"
+                        title={p.event_name || "Geral"}
+                      >
                         {p.event_name || "Geral"}
                       </span>
                     </td>

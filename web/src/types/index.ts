@@ -25,6 +25,8 @@ export interface EventItem extends Models.Document {
 
 export interface Participant extends Models.Document {
   bib_number: string;
+  /** Só para ordenar: os dígitos de `bib_number`, porque texto ordena errado. */
+  bib_order?: number;
   chip: string;
   name: string;
   name_folded?: string;
