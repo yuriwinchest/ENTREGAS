@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Radio, RadioTower, CheckCircle2, AlertTriangle, XCircle, Loader2, Power } from "lucide-react";
+import { Radio, RadioTower, CheckCircle2, AlertTriangle, XCircle, Loader2, Power, Eraser, Table } from "lucide-react";
 import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
 import { sounds } from "../lib/audio";
@@ -97,10 +97,14 @@ export const ReaderModePanel: React.FC<ReaderModePanelProps> = ({
     [activeEvent, onSelecionar]
   );
 
-  const { ultimoCodigo, totalDeLeituras, recebendo } = useTagReader({
+  const { ultimoCodigo, totalDeLeituras, recebendo, capturadas, limparCaptura } = useTagReader({
     ativo: ligado,
     onLeitura: processarLeitura
   });
+
+  const hora = (ms: number) =>
+    new Date(ms).toLocaleTimeString("pt-BR", { hour12: false }) +
+    "." + String(new Date(ms).getMilliseconds()).padStart(3, "0");
 
   const ultimo = historico[0];
 
@@ -235,6 +239,63 @@ export const ReaderModePanel: React.FC<ReaderModePanelProps> = ({
                   </p>
                 )}
               </div>
+
+              {/* Captura bruta das tags — mesma informação da tela técnica do
+                  ChipReader. Antena e dBm não aparecem porque, em modo teclado,
+                  a leitora envia apenas o código; esses campos só existem pelo
+                  protocolo do SDK. */}
+              {capturadas.length > 0 && (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 overflow-hidden">
+                  <div className="px-3 py-2 flex items-center justify-between border-b border-slate-800">
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <Table className="w-3 h-3" />
+                      Captura das tags ({capturadas.length})
+                    </span>
+                    <button
+                      onClick={limparCaptura}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-white transition-colors"
+                    >
+                      <Eraser className="w-3 h-3" /> Limpar
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[11px]">
+                      <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase tracking-wider">
+                        <tr>
+                          <th className="px-2.5 py-1.5">#</th>
+                          <th className="px-2.5 py-1.5">EPC / Código</th>
+                          <th className="px-2.5 py-1.5">Primeira</th>
+                          <th className="px-2.5 py-1.5">Última</th>
+                          <th className="px-2.5 py-1.5 text-center">Leituras</th>
+                          <th className="px-2.5 py-1.5">Antena</th>
+                          <th className="px-2.5 py-1.5">Intensidade</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/70 text-slate-300 font-mono max-h-56">
+                        {capturadas.map((tag, indice) => (
+                          <tr key={tag.codigo} className="hover:bg-slate-800/40">
+                            <td className="px-2.5 py-1.5 text-slate-500">{capturadas.length - indice}</td>
+                            <td className="px-2.5 py-1.5 text-white font-bold">{tag.codigo}</td>
+                            <td className="px-2.5 py-1.5">{hora(tag.primeiraEm)}</td>
+                            <td className="px-2.5 py-1.5">{hora(tag.ultimaEm)}</td>
+                            <td className="px-2.5 py-1.5 text-center text-brand-300 font-bold">
+                              {tag.leituras}
+                            </td>
+                            <td className="px-2.5 py-1.5 text-slate-600">—</td>
+                            <td className="px-2.5 py-1.5 text-slate-600">—</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <p className="px-3 py-1.5 text-[10px] text-slate-500 border-t border-slate-800">
+                    Antena e intensidade ficam vazias em modo teclado: a leitora envia só o código.
+                    Esses campos exigem a conexão pelo SDK.
+                  </p>
+                </div>
+              )}
 
               {/* Leituras anteriores */}
               {historico.length > 1 && (

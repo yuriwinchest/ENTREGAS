@@ -28,6 +28,15 @@ interface UseTagReaderOptions {
   janelaDeRepeticaoMs?: number;
 }
 
+/** Uma tag distinta vista nesta sessão, com sua contagem de passagens. */
+export interface TagCapturada {
+  codigo: string;
+  /** Quantas vezes a leitora reportou esta mesma tag. */
+  leituras: number;
+  primeiraEm: number;
+  ultimaEm: number;
+}
+
 export interface EstadoDaLeitora {
   /** Última leitura reconhecida, para exibir na tela. */
   ultimoCodigo: string | null;
@@ -35,6 +44,9 @@ export interface EstadoDaLeitora {
   totalDeLeituras: number;
   /** Verdadeiro no instante em que uma tag entra, para piscar a interface. */
   recebendo: boolean;
+  /** Captura bruta, no espírito da tela técnica do ChipReader. */
+  capturadas: TagCapturada[];
+  limparCaptura: () => void;
 }
 
 export function useTagReader({
@@ -52,6 +64,7 @@ export function useTagReader({
   const [ultimoCodigo, setUltimoCodigo] = useState<string | null>(null);
   const [totalDeLeituras, setTotalDeLeituras] = useState(0);
   const [recebendo, setRecebendo] = useState(false);
+  const [capturadas, setCapturadas] = useState<TagCapturada[]>([]);
 
   callbackRef.current = onLeitura;
 
@@ -61,6 +74,18 @@ export function useTagReader({
 
       // A leitora repete a mesma tag enquanto ela estiver no campo da antena.
       // Sem esta janela, um atleta parado na frente dispararia dezenas de vezes.
+      // A captura bruta registra TODA passagem, inclusive as repetidas — é o
+      // equivalente à coluna "Leituras" da tela técnica do ChipReader.
+      setCapturadas((anteriores) => {
+        const existente = anteriores.find((t) => t.codigo === codigo);
+        if (existente) {
+          return anteriores.map((t) =>
+            t.codigo === codigo ? { ...t, leituras: t.leituras + 1, ultimaEm: agora } : t
+          );
+        }
+        return [{ codigo, leituras: 1, primeiraEm: agora, ultimaEm: agora }, ...anteriores].slice(0, 100);
+      });
+
       const ultimaVez = lidasRecentemente.current.get(codigo);
       if (ultimaVez && agora - ultimaVez < janelaDeRepeticaoMs) return;
 
@@ -120,5 +145,12 @@ export function useTagReader({
     return () => window.removeEventListener("keydown", aoDigitar, true);
   }, [ativo, intervaloMaximoMs, tamanhoMinimo, aceitar]);
 
-  return { ultimoCodigo, totalDeLeituras, recebendo };
+  const limparCaptura = useCallback(() => {
+    setCapturadas([]);
+    setTotalDeLeituras(0);
+    setUltimoCodigo(null);
+    lidasRecentemente.current.clear();
+  }, []);
+
+  return { ultimoCodigo, totalDeLeituras, recebendo, capturadas, limparCaptura };
 }
