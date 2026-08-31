@@ -23,6 +23,7 @@ import { Participant, EventItem } from "../types";
 import { api } from "../lib/appwrite";
 import { useSession } from "../lib/session";
 import { DeskAthleteList } from "./DeskAthleteList";
+import { ReaderModePanel } from "./ReaderModePanel";
 import { sounds } from "../lib/audio";
 import { QRCodeModal } from "./QRCodeModal";
 import { DeliveryReceiptModal } from "./DeliveryReceiptModal";
@@ -266,6 +267,15 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
           )}
         </div>
 
+        {/* A leitora fica SEMPRE montada. Antes ela vivia dentro do ramo
+            "nenhum atleta selecionado" e se desligava sozinha a cada entrega
+            confirmada — inviável num balcão com fila andando. */}
+        <ReaderModePanel
+          activeEvent={activeEvent}
+          onSelecionar={selectAthlete}
+          podeSelecionar={!selectedAthlete}
+        />
+
         {/* Card de Detalhes do Atleta Selecionado */}
         {selectedAthlete ? (
           <div className="glass-card rounded-2xl p-6 border-2 border-slate-700/80 bg-slate-900/90 shadow-2xl relative overflow-hidden animate-fade-in">
@@ -495,7 +505,7 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
 
           </div>
         ) : (
-          /* Sem atleta selecionado: a fila de trabalho fica à mão.
+          /* Sem atleta selecionado: leitora e fila de trabalho à mão.
              Antes aqui havia só um aviso "aguardando pesquisa", que deixava o
              operador sem saída quando o atleta chega sem saber o número. */
           <DeskAthleteList
