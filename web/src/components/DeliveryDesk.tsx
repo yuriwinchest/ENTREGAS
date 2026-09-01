@@ -177,30 +177,20 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
       <div className="lg:col-span-8 space-y-6">
         
         {/* Barra de Busca de Alta Performance */}
-        <div className="glass-card rounded-2xl p-4 sm:p-6 border border-slate-800 relative shadow-xl">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5" />
-              Busca Rápida de Atleta (RFID / Peito / Nome / CPF)
-            </label>
-            <span className="text-[11px] font-mono text-slate-400">
-              Dica: Pressione <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">/</kbd> para focar
-            </span>
-          </div>
-
+        <div className="glass-card rounded-2xl p-4 border border-slate-800 relative shadow-xl">
           <div className="relative">
             <input
               ref={searchInputRef}
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Digite o número de peito, nome do atleta, leia o chip ou CPF..."
+              placeholder="Peito, nome, CPF ou leia o chip..."
               className="w-full pl-12 pr-12 py-3.5 bg-slate-950/90 border-2 border-slate-800 rounded-xl text-white placeholder-slate-500 text-base sm:text-lg font-medium focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 transition-all outline-none"
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
               <Search className="w-5 h-5" />
             </div>
-            {searchTerm && (
+            {searchTerm ? (
               <button
                 onClick={() => {
                   setSearchTerm("");
@@ -211,6 +201,10 @@ export const DeliveryDesk: React.FC<DeliveryDeskProps> = ({
               >
                 <X className="w-5 h-5" />
               </button>
+            ) : (
+              <kbd className="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[11px] font-mono pointer-events-none">
+                /
+              </kbd>
             )}
           </div>
 

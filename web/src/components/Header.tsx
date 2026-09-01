@@ -7,14 +7,11 @@ import {
   Clock,
   Layers,
   LogOut,
-  ChevronDown,
-  SlidersHorizontal,
   FolderOpen,
   UserCheck,
   Shield,
   Building2
 } from "lucide-react";
-import { EventItem } from "../types";
 
 export type HeaderTab = "desk" | "telao" | "participants" | "settings";
 
@@ -47,15 +44,11 @@ interface HeaderProps {
   setCurrentTab: (tab: HeaderTab) => void;
   /** Abas liberadas para o usuário. As demais nem são desenhadas. */
   allowedTabs: HeaderTab[];
-  eventName: string;
   operatorName: string;
   setOperatorName: (name: string) => void;
   online: boolean;
   onLogout?: () => void;
   onOpenUserManager?: () => void;
-  events?: EventItem[];
-  activeEvent?: EventItem | null;
-  onSelectEvent?: (event: EventItem | null) => void;
   onOpenEventManager?: () => void;
   tenantName?: string;
   roleLabel?: string;
@@ -70,9 +63,6 @@ export const Header: React.FC<HeaderProps> = ({
   online,
   onLogout,
   onOpenUserManager,
-  events = [],
-  activeEvent = null,
-  onSelectEvent,
   onOpenEventManager,
   tenantName,
   roleLabel
@@ -80,7 +70,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [time, setTime] = useState("");
   const [isEditingOperator, setIsEditingOperator] = useState(false);
   const [tempOperator, setTempOperator] = useState(operatorName);
-  const [isEventDropdownOpen, setIsEventDropdownOpen] = useState(false);
 
   useEffect(() => {
     const atualizar = () =>
@@ -137,106 +126,13 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Seletor de evento ativo */}
-          {onSelectEvent && (
-            <div className="relative hidden sm:block">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all max-w-[340px] ${
-                    activeEvent
-                      ? "bg-brand-950/40 border-brand-500/40 text-brand-300 hover:bg-brand-900/40"
-                      : "bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800"
-                  }`}
-                  title="Alternar o evento/tabela ativo"
-                >
-                  <FolderOpen className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-                  <span className="truncate font-display" title={activeEvent ? activeEvent.name : "Todas as Tabelas"}>
-                    {activeEvent ? activeEvent.name : "Todas as Tabelas"}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-70 shrink-0" />
-                </button>
-
-                {onOpenEventManager && (
-                  <button
-                    type="button"
-                    onClick={onOpenEventManager}
-                    className="p-1.5 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                    title="Gerenciar eventos e tabelas"
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {isEventDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setIsEventDropdownOpen(false)} />
-                  <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-navy-900 border border-slate-700 shadow-2xl p-2 z-40 space-y-1 animate-scale-in">
-                    <div className="px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
-                      Selecione a tabela / evento
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelectEvent(null);
-                        setIsEventDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                        !activeEvent ? "bg-brand-500 text-white" : "text-slate-300 hover:bg-slate-800"
-                      }`}
-                    >
-                      Visão Geral (Todas as Tabelas)
-                    </button>
-
-                    {events.map((ev) => (
-                      <button
-                        key={ev.$id}
-                        type="button"
-                        onClick={() => {
-                          onSelectEvent(ev);
-                          setIsEventDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex flex-col gap-0.5 transition-colors ${
-                          activeEvent?.$id === ev.$id
-                            ? "bg-brand-500 text-white"
-                            : "text-slate-300 hover:bg-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="truncate font-bold">{ev.name}</span>
-                          <span className="text-[10px] opacity-80 font-mono">
-                            {ev.total_athletes || 0} atletas
-                          </span>
-                        </div>
-                        {ev.event_date && (
-                          <span className="text-[10px] opacity-70 font-mono">{ev.event_date}</span>
-                        )}
-                      </button>
-                    ))}
-
-                    {onOpenEventManager && (
-                      <div className="pt-1 border-t border-slate-800">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsEventDropdownOpen(false);
-                            onOpenEventManager();
-                          }}
-                          className="w-full text-center px-3 py-1.5 rounded-xl text-xs font-bold text-brand-400 hover:bg-brand-500/10 transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <SlidersHorizontal className="w-3.5 h-3.5" />
-                          Gerenciar / Renomear Eventos
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          {/*
+            O seletor de evento foi removido daqui de propósito: a barra de
+            Tabelas, logo abaixo, já é o seletor — e é um seletor melhor, pois
+            mostra o nome inteiro, a cor e o progresso de cada prova. Manter os
+            dois criava duas fontes da mesma verdade lado a lado e empurrava o
+            nome da tabela ativa para dentro de um "..." truncado.
+          */}
 
           {/* Navegação principal */}
           <nav className="hidden md:flex items-center gap-1 p-1 bg-slate-950/70 border border-slate-800 rounded-xl">
@@ -244,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={tab.key}
                 onClick={() => setCurrentTab(tab.key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   currentTab === tab.key
                     ? "bg-brand-500 text-white shadow-md shadow-brand-500/30"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"

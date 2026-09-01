@@ -1,125 +1,92 @@
 import React from "react";
-import { Users, CheckCircle2, Clock, Activity, TrendingUp, FolderOpen } from "lucide-react";
+import { Users, CheckCircle2, Clock } from "lucide-react";
 import { DeliveryStats } from "../types";
 
 interface StatsCardsProps {
   stats: DeliveryStats;
+  /** Mantido por compatibilidade: a tabela ativa já é indicada pela aba acesa. */
   activeEventName?: string | null;
 }
 
-export const StatsCards: React.FC<StatsCardsProps> = ({ stats, activeEventName }) => {
+/**
+ * Resumo numérico da operação.
+ *
+ * O QUE MUDOU E POR QUÊ: eram quatro cartões grandes, cada um com ícone,
+ * rótulo em caixa alta e barra de progresso própria. Três problemas reais:
+ *
+ *  1. A barra dos "pendentes" era o inverso exato da barra dos "entregues" —
+ *     a mesma informação desenhada duas vezes, competindo pela atenção.
+ *  2. O cartão "Status da Operação / Ao Vivo" não trazia número nenhum e
+ *     repetia o indicador de sincronização que já vive no cabeçalho.
+ *  3. A faixa "Filtro de Estatísticas" anunciava a tabela ativa, sendo que a
+ *     aba correspondente logo acima já está acesa, com cor e anel próprios.
+ *
+ * Agora é uma faixa só, com os três números que o operador de fato usa e uma
+ * única barra de progresso. Sobram cerca de 100px de altura, e a busca — o
+ * campo mais usado da tela — sobe para perto do topo.
+ */
+
+interface NumeroProps {
+  rotulo: string;
+  valor: number;
+  sufixo?: string;
+  icone: React.ReactNode;
+  cor: string;
+  corRotulo: string;
+}
+
+const Numero: React.FC<NumeroProps> = ({ rotulo, valor, sufixo, icone, cor, corRotulo }) => (
+  <div className="px-4 sm:px-5 py-3.5 flex flex-col gap-1 min-w-0">
+    <span className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${corRotulo}`}>
+      {icone}
+      {rotulo}
+    </span>
+    <div className="flex items-baseline gap-2 min-w-0">
+      <span className={`text-2xl sm:text-3xl font-black font-display leading-none ${cor}`}>
+        {valor.toLocaleString("pt-BR")}
+      </span>
+      {sufixo && <span className={`text-xs font-mono ${corRotulo}`}>{sufixo}</span>}
+    </div>
+  </div>
+);
+
+export const StatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
+  const restante = stats.total > 0 ? (100 - stats.percentage).toFixed(1) : "0";
+
   return (
-    <div className="space-y-2">
-      {/* Active Event Indicator Banner */}
-      <div className="flex items-center justify-between px-1 text-xs">
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <FolderOpen className="w-3.5 h-3.5 text-brand-400" />
-          <span>Filtro de Estatísticas:</span>
-          <span className="font-bold text-white bg-slate-800 px-2 py-0.5 rounded-md font-mono">
-            {activeEventName || "Todas as Tabelas / Eventos (Geral)"}
-          </span>
-        </div>
+    <div className="glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+      <div className="grid grid-cols-3 divide-x divide-slate-800/80">
+        <Numero
+          rotulo="Inscritos"
+          valor={stats.total}
+          icone={<Users className="w-3.5 h-3.5" />}
+          cor="text-white"
+          corRotulo="text-slate-400"
+        />
+        <Numero
+          rotulo="Entregues"
+          valor={stats.delivered}
+          sufixo={`${stats.percentage}%`}
+          icone={<CheckCircle2 className="w-3.5 h-3.5" />}
+          cor="text-emerald-400"
+          corRotulo="text-emerald-500/80"
+        />
+        <Numero
+          rotulo="Pendentes"
+          valor={stats.pending}
+          sufixo={`${restante}%`}
+          icone={<Clock className="w-3.5 h-3.5" />}
+          cor="text-amber-400"
+          corRotulo="text-amber-500/80"
+        />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Card */}
-        <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Total Inscritos
-            </span>
-            <div className="p-2 rounded-xl bg-slate-800/80 text-slate-300">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-black font-display text-white">
-              {stats.total.toLocaleString("pt-BR")}
-            </span>
-            <span className="text-xs text-slate-400 font-mono">100% Base</span>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800" />
-        </div>
-
-        {/* Entregues Card */}
-        <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden group border-emerald-500/20 bg-emerald-950/10">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-              Kits Entregues
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-black font-display text-emerald-400">
-              {stats.delivered.toLocaleString("pt-BR")}
-            </span>
-            <span className="text-xs font-bold text-emerald-400 font-mono">
-              {stats.percentage}%
-            </span>
-          </div>
-          {/* Progress bar background */}
-          <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div 
-              className="bg-emerald-500 h-full transition-all duration-500 rounded-full shadow-sm shadow-emerald-500/50"
-              style={{ width: `${Math.min(100, stats.percentage)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Pendentes Card */}
-        <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden group border-amber-500/20 bg-amber-950/10">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">
-              Kits Pendentes
-            </span>
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-2xl sm:text-3xl font-black font-display text-amber-400">
-              {stats.pending.toLocaleString("pt-BR")}
-            </span>
-            <span className="text-xs font-mono text-amber-400/80">
-              {stats.total > 0 ? (100 - stats.percentage).toFixed(1) : 0}%
-            </span>
-          </div>
-          {/* Progress bar background */}
-          <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div 
-              className="bg-amber-500 h-full transition-all duration-500 rounded-full"
-              style={{ width: `${Math.max(0, 100 - stats.percentage)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Ritmo / Performance Card */}
-        <div className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden group border-brand-500/20 bg-brand-950/10">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-brand-400">
-              Status da Operação
-            </span>
-            <div className="p-2 rounded-xl bg-brand-500/20 text-brand-400">
-              <Activity className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping" />
-              <span className="text-xl sm:text-2xl font-black font-display text-white">
-                Ao Vivo
-              </span>
-            </div>
-            <span className="text-xs text-brand-400/80 font-mono">
-              Nuvem Ativa
-            </span>
-          </div>
-          <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div className="bg-brand-500 h-full w-full opacity-60" />
-          </div>
-        </div>
+      {/* Uma barra só: o que falta é simplesmente o trecho não preenchido. */}
+      <div className="h-1.5 w-full bg-slate-800/90" role="presentation">
+        <div
+          className="h-full bg-emerald-500 transition-all duration-500"
+          style={{ width: `${Math.min(100, stats.percentage)}%` }}
+        />
       </div>
     </div>
   );

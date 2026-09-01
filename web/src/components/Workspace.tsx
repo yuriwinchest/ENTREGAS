@@ -256,15 +256,11 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onLogout }) => {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         allowedTabs={abasPermitidas}
-        eventName={activeEvent ? activeEvent.name : settings.event_name}
         operatorName={operatorName}
         setOperatorName={setOperatorName}
         online={online}
         onLogout={onLogout}
         onOpenUserManager={can("team.manage") ? () => setIsUserManagerOpen(true) : undefined}
-        events={events}
-        activeEvent={activeEvent}
-        onSelectEvent={(ev) => setActiveEventId(ev ? ev.$id : null)}
         onOpenEventManager={can("event.edit") ? () => setIsEventManagerOpen(true) : undefined}
         tenantName={session.tenant?.name}
         roleLabel={session.operator?.role === "admin" ? "Administrador" : "Operador"}
@@ -279,7 +275,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onLogout }) => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <StatsCards stats={stats} activeEventName={activeEvent ? activeEvent.name : null} />
+        <StatsCards stats={stats} />
 
         {currentTab === "desk" && (
           <DeliveryDesk
@@ -334,12 +330,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({ user, onLogout }) => {
         />
       )}
 
-      <footer className="border-t border-slate-900 py-4 bg-navy-950 text-center text-xs text-slate-500 font-mono">
-        {session.tenant?.name} • Evento Ativo:{" "}
-        <strong className="text-slate-300">
-          {activeEvent ? activeEvent.name : "Visão Geral (Todas as Tabelas)"}
-        </strong>{" "}
-        • Operador: <strong className="text-slate-400">{operatorName}</strong> ({user.email})
+      <footer className="border-t border-slate-900 py-3 bg-navy-950 text-center text-[11px] text-slate-600 font-mono">
+        {session.tenant?.name} • {operatorName} ({user.email})
       </footer>
     </div>
   );
