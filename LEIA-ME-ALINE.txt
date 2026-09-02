@@ -1,39 +1,72 @@
-ENTREGA DE KITS CHIPOWER 0.3.3 - HOMOLOGAÇÃO
-================================================
+ENTREGA DE KITS CHIPOWER 0.4.0 - HOMOLOGACAO
+==============================================
 
-ATENÇÃO
-Esta é uma versão de homologação. Não utilize esta versão em prova oficial
-antes do teste físico com a maleta, o R420 e o telão reais.
+ATENCAO
+Esta e uma versao de homologacao. Nao utilize em prova oficial antes do teste
+fisico com a leitora, o computador e a televisao reais.
 
-O QUE VOCÊ RECEBEU
-- Um único arquivo Windows: INSTALAR-Entrega-de-Kits-CHIPOWER-v0.3.3-homologacao.exe
-- Abra com dois cliques. Não é necessário instalar o .NET nem procurar outros arquivos.
-- Três abas: Entrega de Kits, Entregues e Leitor RFID.
-- Entrega pelo titular ou por terceiro (grava o nome de quem retirou).
-- Faixa do percurso: quantos kits já saíram e quantos faltam.
-- Telão em tela cheia. CPF e data de nascimento não aparecem no telão.
+O QUE MUDOU NESTA VERSAO
+Duas abas novas, para o corredor passar o chip na leitora de mesa e aparecer
+na televisao: PASSAGEM e TELAO.
 
-COMO OPERAR
-1. Abra o instalador com dois cliques e espere o sistema abrir.
-2. Aba Entrega de Kits: Anexar arquivo (Excel, TXT, XML ou PDF da lista do evento).
-3. Confirme o aviso de substituição da lista somente se estiver no evento correto.
-4. Digite o nome do corredor, abra a ficha e use Confirmar entrega.
-   Se outra pessoa for retirar, use Entrega de terceiro e informe o nome de quem leva.
-5. Aba Entregues: confira quem já retirou o kit.
-6. Aba Leitor RFID: o telão abre sozinho. Quem passa no chip aparece como
-   KIT ENTREGUE (já retirou) ou KIT NÃO ENTREGUE (ainda não retirou).
-7. Sem a maleta, use Simular leitura com um CHIP da lista.
 
-TESTE COM A MALETA R420
-1. Feche totalmente o ShipRed. O R420 aceita somente um cliente LLRP.
-2. Confirme o IP 192.168.0.33 e as antenas 1 a 4.
-3. Use Iniciar R420 e leia um CHIP conhecido da lista.
-4. Confira o telão: entregue ou não entregue, conforme a aba Entregues.
+ABA PASSAGEM - LER O CHIP
+-------------------------
+1. Ligue a leitora de mesa no cabo USB. Nao precisa instalar driver, nem
+   configurar IP, nem abrir nenhum outro programa. Ela funciona como se fosse
+   um teclado.
+2. Clique em "Anexar lista" e escolha a planilha do evento (Excel, TXT, CSV,
+   XML ou PDF). A lista fica so na memoria: nada e gravado, e ao fechar o
+   programa ela some. Nenhuma entrega ja registrada e apagada.
+3. Confira o selo do canto direito. "Leitora armada" significa pronto para
+   receber. Se aparecer "Pausada: campo em foco", clique em qualquer area
+   vazia da tela para sair do campo de texto.
+4. Passe o chip em frente a leitora. O corredor aparece na hora, e a tabela
+   de baixo registra toda passagem, inclusive as repetidas.
 
-GATE OBRIGATÓRIO
-A versão só poderá ser considerada pronta para uso oficial depois da validação
-física com o computador, a maleta, o R420, as antenas, um CHIP conhecido e o telão.
+SE APARECER "CHIP FORA DA LISTA"
+O programa mostra um quadro "POR QUE NAO ACHEI" com o codigo que a leitora
+enviou e todas as formas que foram procuradas na planilha. Tire um print
+dessa tela e mande para nos: e por ali que descobrimos se a leitora precisa
+ser reconfigurada para enviar o mesmo numero que esta na coluna CHIP.
+
+
+ABA TELAO - MOSTRAR NA TELEVISAO
+--------------------------------
+1. Ligue a televisao como segundo monitor do computador (cabo HDMI, com o
+   Windows em modo "Estender").
+2. Abra a aba TELAO. Em "ONDE EXIBIR", escolha o monitor da televisao.
+3. Clique em "Destacar para a TV". O telao vai para a televisao em tela cheia,
+   e voce continua trabalhando normalmente na aba PASSAGEM do computador.
+4. A previa dentro da aba continua acompanhando o que o publico esta vendo.
+5. Para fechar o telao: botao "Trazer de volta", ou a tecla Esc, ou o botao
+   "Fechar telao" no canto da propria televisao.
+6. "Escolher fundo" troca a imagem de fundo do telao e fica guardada.
+
+SO TEM UM MONITOR?
+O telao vai cobrir a tela de trabalho. A propria aba avisa quando isso vai
+acontecer. Use a tecla Esc para voltar.
+
+
+AS ABAS ANTIGAS CONTINUAM IGUAIS
+--------------------------------
+ENTREGA DE KITS, ENTREGUES e LEITOR RFID nao mudaram. Elas continuam usando a
+base local do computador, com a maleta e o R420, exatamente como antes.
+Anexar a lista na aba PASSAGEM NAO mexe na lista do balcao.
+
 
 PRIVACIDADE
-A lista de inscritos não vai dentro do instalador. CPF e nascimento ficam só
-na base local do computador do evento.
+CPF e data de nascimento nunca aparecem no telao. Na televisao so vao nome,
+numero, chip, camisa, modalidade e categoria.
+
+
+TESTE SEM A LEITORA
+Na aba PASSAGEM, no quadro "TESTE SEM A LEITORA", digite um numero da coluna
+CHIP da planilha e confirme. O sistema se comporta como se o chip tivesse
+passado na leitora.
+
+
+GATE OBRIGATORIO
+Esta versao so pode ser considerada pronta para uso oficial depois do teste
+fisico com o computador, a leitora, um chip conhecido e a televisao ligada
+como segundo monitor.

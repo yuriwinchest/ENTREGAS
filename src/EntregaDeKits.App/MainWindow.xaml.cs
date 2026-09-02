@@ -4,7 +4,6 @@ using System.Windows;
 using System.IO;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using MessageBox = System.Windows.MessageBox;
-using Forms = System.Windows.Forms;
 
 namespace EntregaDeKits.App;
 
@@ -30,6 +29,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         FitToWorkArea();
+        InitializePassage();
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Chipower", "EntregaDeKits", "eventos.db");
         _repository = new SqliteParticipantRepository(path);
         _settings = new EventSettingsStore(Path.GetDirectoryName(path)!); _settings.Load();
@@ -82,7 +82,7 @@ public partial class MainWindow : Window
         var display = DisplayModel.From(result); StateText.Text = display.State; ParticipantText.Text = display.Name;
         DetailsText.Text = display.Detail + (result.Participant is null ? string.Empty : $"\nNº {result.Participant.Number}  •  CHIP {result.Participant.Chip}\nCamisa: {result.Participant.Shirt ?? "—"}  |  {result.Participant.Modality ?? "—"}  |  {result.Participant.Category ?? "—"}");
         OperationNotice.Text = result.State == DeliveryState.AwaitingConfirmation ? "Participante incluído na fila. Confirme a entrega após conferir o kit." : result.Message;
-        _presentation?.Update(display);
+        if (!InPassageMode) _presentation?.Update(display);
         if (result.Participant is not null) ShowRunnerCard(result.Participant, display.State);
         if (refreshQueue) RefreshQueue();
     }
@@ -274,6 +274,11 @@ public partial class MainWindow : Window
         }
         if (tab.Header as string == "ENTREGUES")
             _ = RefreshDeliveredListAsync();
+
+        // O telao pertence a aba que esta em cena: ao trocar de aba, ele passa
+        // a mostrar o conteudo do modo correspondente.
+        RefreshPresentationContent();
+        if (tab.Header as string == "PASSAGEM") PassagemPanel.Refresh();
     }
 
     private async void Simulate_Click(object sender, RoutedEventArgs e)
@@ -350,13 +355,12 @@ public partial class MainWindow : Window
 
     private void OpenPresentation_Click(object sender, RoutedEventArgs e)
     {
-        var presentation = GetPresentation();
-        if (presentation.IsVisible) { presentation.Activate(); return; }
-        var screens = Forms.Screen.AllScreens;
-        var target = screens.Length > 1 ? screens.First(screen => !screen.Primary) : Forms.Screen.PrimaryScreen!;
-        presentation.Left = target.Bounds.Left; presentation.Top = target.Bounds.Top; presentation.Width = target.Bounds.Width; presentation.Height = target.Bounds.Height; presentation.WindowState = WindowState.Maximized;
-        if (!string.IsNullOrWhiteSpace(_settings.BackgroundPath)) presentation.SetBackground(_settings.BackgroundPath);
-        presentation.Show(); presentation.Update(_current is null ? DisplayModel.Idle : DisplayModel.From(_current));
+        if (_presentation is { IsVisible: true })
+        {
+            _presentation.Activate();
+            return;
+        }
+        ShowPresentationOn(PreferredScreenIndex());
     }
 
     private void Background_Click(object sender, RoutedEventArgs e)
@@ -384,7 +388,12 @@ public partial class MainWindow : Window
     {
         if (_presentation is not null) return _presentation;
         _presentation = new PresentationWindow();
-        _presentation.Closed += (_, _) => _presentation = null;
+        AttachPresentationHook(_presentation);
+        _presentation.Closed += (_, _) =>
+        {
+            _presentation = null;
+            ReleasePresentation();
+        };
         return _presentation;
     }
     private async void OnClosing(object? sender, System.ComponentModel.CancelEventArgs eventArgs)
@@ -392,6 +401,7 @@ public partial class MainWindow : Window
         if (_closingAfterReaderRelease) return;
         eventArgs.Cancel = true;
         _closingAfterReaderRelease = true;
+        DisposePassageHooks();
         await StopRealReaderAsync();
         await _simulator.DisposeAsync();
         Close();

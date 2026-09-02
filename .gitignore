@@ -41,3 +41,6 @@ scratch/
 
 # Backups do banco (contem dados pessoais de atletas)
 backups/
+
+# Executaveis baixados soltos na raiz (o build oficial sai em dist/)
+/*.exe
