@@ -73,9 +73,14 @@ public sealed class KeyboardWedgeHook : IDisposable
         _onCode(code);
     }
 
+    /// <summary>Atalho do sistema não é leitura de etiqueta — mesma regra da web.</summary>
+    private static bool IsShortcut()
+        => (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) != 0;
+
     private bool Armed()
     {
         if (_disposed) return false;
+        if (IsShortcut()) return false;
         if (IsTypingInAField()) { _decoder.Reset(); return false; }
         return _isArmed();
     }

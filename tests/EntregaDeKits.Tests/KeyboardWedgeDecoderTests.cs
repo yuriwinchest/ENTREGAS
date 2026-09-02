@@ -43,8 +43,12 @@ public class KeyboardWedgeDecoderTests
     }
 
     [Fact]
-    public void EnterSoltoMuitoDepoisDaRajadaNaoEmiteNada()
+    public void EnterAtrasadoDepoisDaRajadaAindaValeComoLeitura()
     {
+        // Varias leitoras HID mandam o sufixo Enter com atraso proprio, bem
+        // maior que o intervalo entre os caracteres. Recusar esse Enter
+        // quebraria a leitora que ja funciona na versao web, que so olha o
+        // tamanho do codigo acumulado.
         var decoder = new KeyboardWedgeDecoder();
         var moment = Start;
         foreach (var character in "51921")
@@ -53,8 +57,18 @@ public class KeyboardWedgeDecoderTests
             moment = moment.AddMilliseconds(6);
         }
 
-        // O operador voltou dois segundos depois e apertou Enter num campo.
-        Assert.Null(decoder.Submit(moment.AddSeconds(2)));
+        Assert.Equal("51921", decoder.Submit(moment.AddMilliseconds(500)));
+    }
+
+    [Fact]
+    public void PausaHumanaEntreTeclasContinuaSendoAProtecao()
+    {
+        // Sem a regra de cadencia no Enter, quem impede disparo acidental e o
+        // acumulo: cada pausa longa zera o buffer, entao no Enter nao ha
+        // codigo completo para emitir.
+        var decoder = new KeyboardWedgeDecoder();
+
+        Assert.Null(Digitar(decoder, "51921", gapMilliseconds: 200));
     }
 
     [Fact]

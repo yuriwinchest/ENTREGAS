@@ -50,15 +50,22 @@ public sealed class KeyboardWedgeDecoder
     }
 
     /// <summary>Enter recebido. Devolve o código quando a rajada tem cara de leitora.</summary>
+    ///
+    /// <remarks>
+    /// O Enter NÃO precisa chegar dentro da janela de cadência, e isso é uma
+    /// decisão, não um esquecimento: várias leitoras HID mandam o sufixo Enter
+    /// com um atraso próprio, configurável, bem maior que o intervalo entre os
+    /// caracteres. Exigir cadência também no Enter recusaria justamente a
+    /// leitora que já funciona na versão web.
+    ///
+    /// A proteção contra disparo acidental continua sendo o acúmulo: uma pausa
+    /// humana entre teclas zera o buffer, então quando o Enter chega não há
+    /// código completo para emitir.
+    /// </remarks>
     public string? Submit(DateTimeOffset at)
     {
-        var gap = _lastKeyAt is null ? double.MaxValue : (at - _lastKeyAt.Value).TotalMilliseconds;
         var code = _buffer.ToString().Trim();
         Reset();
-
-        // O Enter também precisa vir dentro da rajada. Um Enter solto, muito
-        // depois do último caractere, é o operador confirmando um campo.
-        if (gap > _maxGapMilliseconds) return null;
         return code.Length >= _minimumLength ? code.ToUpperInvariant() : null;
     }
 
