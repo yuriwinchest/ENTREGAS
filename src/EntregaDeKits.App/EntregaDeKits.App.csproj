@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>EntregaDeKits</AssemblyName><Product>Entrega de Kits CHIPOWER</Product><Version>0.4.3</Version><ApplicationIcon>Resources\chipower.ico</ApplicationIcon>
+    <AssemblyName>EntregaDeKits</AssemblyName><Product>Entrega de Kits CHIPOWER</Product><Version>0.4.4</Version><ApplicationIcon>Resources\chipower.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\EntregaDeKits.Core\EntregaDeKits.Core.csproj" />

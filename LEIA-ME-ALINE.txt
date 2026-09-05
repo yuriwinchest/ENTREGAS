@@ -1,4 +1,4 @@
-ENTREGA DE KITS CHIPOWER 0.4.3 - HOMOLOGACAO
+ENTREGA DE KITS CHIPOWER 0.4.4 - HOMOLOGACAO
 ==============================================
 
 ATENCAO
@@ -24,11 +24,38 @@ ABA PASSAGEM - LER O CHIP
 4. Passe o chip em frente a leitora. O corredor aparece na hora, e a tabela
    de baixo registra toda passagem, inclusive as repetidas.
 
+SE O CHIP NAO ACHAR NINGUEM - ASSOCIAR A ETIQUETA
+--------------------------------------------------
+Muitas etiquetas guardam por dentro um numero DIFERENTE do CHIP que esta na
+planilha. Quando isso acontece nenhuma regra adivinha de quem e a etiqueta, e
+o sistema precisa aprender uma vez. E rapido:
+
+1. Aba ENTREGA DE KITS.
+2. Clique no corredor na lista. A ficha dele abre a direita.
+3. Marque "Associar etiqueta ao corredor selecionado".
+4. Passe a etiqueta dele na leitora UMA vez. Aparece a confirmacao.
+5. Desmarque a opcao e siga para o proximo.
+
+Dai em diante, passar aquela etiqueta encontra o corredor sozinho e o telao
+mostra o nome dele. O que foi ensinado fica gravado no computador e continua
+valendo depois de fechar o programa.
+
+IMPORTANTE: com a opcao marcada, TODA leitura e gravada para o corredor que
+estiver na ficha. Desmarque assim que terminar de associar.
+
+
 SE APARECER "CHIP FORA DA LISTA"
 O programa mostra um quadro "POR QUE NAO ACHEI" com o codigo que a leitora
 enviou e todas as formas que foram procuradas na planilha. Tire um print
 dessa tela e mande para nos: e por ali que descobrimos se a leitora precisa
 ser reconfigurada para enviar o mesmo numero que esta na coluna CHIP.
+
+
+A LEITORA TAMBEM FUNCIONA NA ABA ENTREGA DE KITS
+------------------------------------------------
+Nao precisa estar na aba PASSAGEM. Com a lista anexada, passar a etiqueta na
+aba ENTREGA DE KITS abre a ficha do corredor e o telao muda junto, sem clicar
+em nada. Digitar o nome no campo de busca continua funcionando normalmente.
 
 
 ABA TELAO - MOSTRAR NA TELEVISAO

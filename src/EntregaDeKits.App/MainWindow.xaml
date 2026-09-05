@@ -141,6 +141,13 @@
                         <Button Grid.Column="1" Content="Confirmar retirada" Click="ConfirmThirdParty_Click" Style="{StaticResource OrangeButton}" Margin="8,0,0,8"/>
                       </Grid>
                     </StackPanel>
+                    <Border Background="{StaticResource FieldFill}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="3" Padding="10,8" Margin="0,0,0,8">
+                      <StackPanel>
+                        <CheckBox x:Name="BindingModeBox" Content="Associar etiqueta ao corredor selecionado" Checked="BindingMode_Changed" Unchecked="BindingMode_Changed" FontWeight="Bold"/>
+                        <TextBlock x:Name="BindingHintText" Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Text="Use quando o código da etiqueta não for o CHIP da planilha: escolha o corredor na lista, ligue esta opção e passe a etiqueta na leitora uma vez."/>
+                      </StackPanel>
+                    </Border>
                     <UniformGrid Columns="2">
                       <Button Content="Confirmar entrega" Click="Confirm_Click" Style="{StaticResource OrangeButton}" Margin="0,0,6,0"/>
                       <Button Content="Entrega de terceiro" Click="RevealThirdParty_Click" Margin="6,0,0,0"/>

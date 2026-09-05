@@ -192,6 +192,17 @@ public partial class MainWindow : Window
             .Take(2)
             .ToArray();
 
+        // Nada pelo número: talvez esta etiqueta já tenha sido ensinada.
+        if (encontrados.Length == 0)
+        {
+            var chipEnsinado = _bindings.Resolve(consulta);
+            if (chipEnsinado is not null)
+                encontrados = _roster
+                    .Where(person => PassageKeys.SameIdentifier(person.Chip, chipEnsinado))
+                    .Take(2)
+                    .ToArray();
+        }
+
         if (encontrados.Length != 1) return;
 
         var participante = encontrados[0];

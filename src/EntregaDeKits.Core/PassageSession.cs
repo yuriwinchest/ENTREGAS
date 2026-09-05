@@ -34,6 +34,9 @@ public sealed class PassageSession
     private IReadOnlyList<Participant> _roster = [];
 
     public TagCaptureLog Capture { get; } = new();
+
+    /// <summary>Ligações etiqueta-corredor ensinadas pelo operador.</summary>
+    public ChipBindings Bindings { get; set; } = new();
     public string? SourceFile { get; private set; }
     public PassageRead? Last { get; private set; }
 
@@ -91,6 +94,16 @@ public sealed class PassageSession
     {
         var tried = PassageKeys.Variants(code);
         var runner = tried.Select(key => _byKey.GetValueOrDefault(key)).FirstOrDefault(found => found is not null);
+
+        // Nada casou pelo número: talvez o operador já tenha ensinado de quem é
+        // esta etiqueta. É o caminho normal quando o código gravado na etiqueta
+        // não tem relação com o CHIP impresso na planilha.
+        if (runner is null)
+        {
+            var chipEnsinado = Bindings.Resolve(code);
+            if (chipEnsinado is not null) runner = _byKey.GetValueOrDefault(chipEnsinado);
+        }
+
         return new PassageRead(PassageKeys.Normalize(code), runner, tried, at);
     }
 

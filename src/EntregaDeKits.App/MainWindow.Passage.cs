@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using EntregaDeKits.Core;
+using EntregaDeKits.Infrastructure;
 using Forms = System.Windows.Forms;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
@@ -22,12 +23,28 @@ namespace EntregaDeKits.App;
 public partial class MainWindow
 {
     private readonly PassageSession _passage = new();
+    private ChipBindingStore? _bindingStore;
+    private ChipBindings _bindings = new();
     private KeyboardWedgeHook? _mainHook;
     private KeyboardWedgeHook? _presentationHook;
 
     /// <summary>A aba aberta é uma das duas do modo passagem?</summary>
-    private bool InPassageMode
-        => MainTabs.SelectedItem is TabItem tab && tab.Header as string is "PASSAGEM" or "TELÃO";
+    private bool InPassageMode => AbaAtual is "PASSAGEM" or "TELÃO";
+
+    /// <summary>
+    /// A leitora vale nesta aba?
+    ///
+    /// O balcão entrou aqui depois do teste com a cliente. A captura só
+    /// funcionava se o cursor estivesse dentro do campo de busca — e assim que
+    /// a operadora clica num corredor da lista, o foco sai do campo e as teclas
+    /// da leitora se perdem no vazio. Passar o chip não fazia nada.
+    ///
+    /// O gancho se desarma sozinho quando um campo de texto está em foco, então
+    /// digitar o nome na busca continua funcionando normalmente.
+    /// </summary>
+    private bool LeitoraVale => AbaAtual is "ENTREGA DE KITS" or "PASSAGEM" or "TELÃO";
+
+    private string? AbaAtual => (MainTabs.SelectedItem as TabItem)?.Header as string;
 
     private void InitializePassage()
     {
@@ -43,12 +60,86 @@ public partial class MainWindow
         // A leitora digita em quem estiver com o foco. Na janela principal a
         // captura só vale nas abas do modo passagem, para não atrapalhar o
         // balcão; a janela do telão ganha o gancho dela quando é aberta.
-        _mainHook = new KeyboardWedgeHook(this, () => InPassageMode, OnTagRead);
+        _mainHook = new KeyboardWedgeHook(this, () => LeitoraVale, OnTagRead);
+
+        // As ligacoes etiqueta-corredor vivem em disco e valem para os dois
+        // modos: o que se ensina no balcao serve na passagem, e vice-versa.
+        _bindingStore = new ChipBindingStore(PastaDeDados());
+        _bindings = _bindingStore.Load();
+        _passage.Bindings = _bindings;
+        AtualizarAvisoDeAssociacao();
 
         _passage.Changed += (_, _) => PushPassageToPresentation();
     }
 
-    private void OnTagRead(string code) => _passage.Read(code, DateTimeOffset.Now);
+    /// <summary>
+    /// Uma etiqueta passou na leitora. O destino depende da aba em cena.
+    ///
+    /// No balcão a leitura abre a ficha do corredor — e como o telão espelha o
+    /// balcão, ele muda junto, que é o comportamento esperado: passou o chip,
+    /// apareceu a pessoa. No modo passagem a leitura alimenta a sessão própria.
+    /// </summary>
+    private void OnTagRead(string code)
+    {
+        // Modo de ensino: a etiqueta lida passa a pertencer ao corredor que
+        // esta na ficha, em vez de ser procurada na lista.
+        if (BindingModeBox?.IsChecked == true)
+        {
+            AssociarEtiqueta(code);
+            return;
+        }
+
+        if (InPassageMode)
+        {
+            _passage.Read(code, DateTimeOffset.Now);
+            return;
+        }
+
+        SelecionarPorIdentificador(code, limparBusca: false);
+    }
+
+    /// <summary>
+    /// Ensina que esta etiqueta pertence ao corredor selecionado.
+    ///
+    /// Sem corredor na ficha nao ha o que ensinar: gravar a etiqueta para
+    /// "ninguem" so criaria lixo, e ligar ao corredor errado faria o telao
+    /// anunciar a pessoa errada depois.
+    /// </summary>
+    private void AssociarEtiqueta(string code)
+    {
+        var corredor = _current?.Participant;
+        if (corredor is null)
+        {
+            DeliveryNotice.Text = "Escolha o corredor na lista antes de passar a etiqueta.";
+            return;
+        }
+
+        if (!_bindings.Bind(code, corredor.Chip))
+        {
+            DeliveryNotice.Text = "A leitura veio vazia. Passe a etiqueta novamente.";
+            return;
+        }
+
+        _bindingStore?.Save(_bindings);
+        DeliveryNotice.Text = $"Etiqueta {PassageKeys.Normalize(code)} associada a {corredor.Name} (CHIP {corredor.Chip}).";
+        AtualizarAvisoDeAssociacao();
+    }
+
+    private void BindingMode_Changed(object sender, RoutedEventArgs eventArgs) => AtualizarAvisoDeAssociacao();
+
+    private void AtualizarAvisoDeAssociacao()
+    {
+        if (BindingHintText is null || BindingModeBox is null) return;
+
+        BindingHintText.Text = BindingModeBox.IsChecked == true
+            ? "Ligado: escolha o corredor na lista e passe a etiqueta. Ela sera gravada para ele e o telao passa a reconhece-la."
+            : $"Use quando o codigo da etiqueta nao for o CHIP da planilha: escolha o corredor, ligue esta opcao e passe a etiqueta uma vez. Ja gravadas: {_bindings.Count}.";
+    }
+
+    private static string PastaDeDados()
+        => System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Chipower", "EntregaDeKits");
 
     /// <summary>Só escreve no telão quando o modo passagem está em cena.</summary>
     private void PushPassageToPresentation()
@@ -119,7 +210,7 @@ public partial class MainWindow
     private void AttachPresentationHook(PresentationWindow presentation)
     {
         _presentationHook?.Dispose();
-        _presentationHook = new KeyboardWedgeHook(presentation, () => InPassageMode, OnTagRead);
+        _presentationHook = new KeyboardWedgeHook(presentation, () => LeitoraVale, OnTagRead);
     }
 
     /// <summary>Chamado quando a janela do telão é fechada.</summary>
