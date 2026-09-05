@@ -136,7 +136,13 @@ public partial class MainWindow : Window
                 await RefreshDeliveredListAsync();
                 UpdateProgressBoard();
                 var idle = DisplayModel.Idle; StateText.Text = idle.State; ParticipantText.Text = "Lista importada. Os corredores já estão na lista."; DetailsText.Text = idle.Detail; _presentation?.Update(idle);
-                var summary = $"Importados: {saved.Imported}  •  Vazias: {saved.BlankRows}  •  Inválidas: {saved.InvalidRows}  •  Duplicados: {saved.DuplicateChips}" + (saved.Issues.Count > 0 ? "\nAvisos: " + string.Join(" | ", saved.Issues.Take(3)) : string.Empty);
+                // As colunas reconhecidas entram no relatorio: a associacao e
+                // automatica, mas a operadora precisa VER que aconteceu e notar
+                // na hora se alguma coluna do cabecalho ficou de fora.
+                var colunas = report.Columns.Count > 0
+                    ? "  •  Colunas reconhecidas: " + string.Join(", ", report.Columns)
+                    : "  •  Nenhuma coluna reconhecida pelo cabecalho";
+                var summary = $"Importados: {saved.Imported}  •  Vazias: {saved.BlankRows}  •  Inválidas: {saved.InvalidRows}  •  Duplicados: {saved.DuplicateChips}" + colunas + (saved.Issues.Count > 0 ? "\nAvisos: " + string.Join(" | ", saved.Issues.Take(3)) : string.Empty);
                 ImportReportText.Text = summary;
                 DeliveryImportReportText.Text = summary;
                 AttachedFileText.Text = $"{Path.GetFileName(path)}  •  {_roster.Count} corredores na lista";

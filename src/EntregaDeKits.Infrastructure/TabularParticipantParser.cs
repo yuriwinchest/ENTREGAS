@@ -66,8 +66,27 @@ internal static class TabularParticipantParser
             people.Add(new Participant(0, number, chip, name, EmptyToNull(Cell(RunnerField.Cpf)), EmptyToNull(Cell(RunnerField.BirthDate)), EmptyToNull(Cell(RunnerField.Sex)), EmptyToNull(Cell(RunnerField.Shirt)), EmptyToNull(Cell(RunnerField.Modality)), EmptyToNull(Cell(RunnerField.Category))));
         }
 
-        return (people, new ImportReport(people.Count, blanks, invalid, duplicates, issues));
+        return (people, new ImportReport(people.Count, blanks, invalid, duplicates, issues, Rotular(columns)));
     }
+
+    /// <summary>Nomes em português das colunas reconhecidas, na ordem da planilha.</summary>
+    private static IReadOnlyList<string> Rotular(IReadOnlyDictionary<int, RunnerField> columns)
+        => columns
+            .OrderBy(item => item.Key)
+            .Select(item => item.Value switch
+            {
+                RunnerField.Number => "número",
+                RunnerField.Chip => "chip",
+                RunnerField.Name => "nome",
+                RunnerField.Cpf => "CPF",
+                RunnerField.BirthDate => "nascimento",
+                RunnerField.Sex => "sexo",
+                RunnerField.Shirt => "camisa",
+                RunnerField.Modality => "modalidade",
+                RunnerField.Category => "categoria",
+                _ => item.Value.ToString().ToLowerInvariant()
+            })
+            .ToArray();
 
     private static IReadOnlyDictionary<int, RunnerField> GuessColumns(IReadOnlyList<string> sample)
     {

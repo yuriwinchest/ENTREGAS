@@ -158,10 +158,11 @@ public sealed class PassageSession
                 runner.Name,
                 runner.Number,
                 runner.Chip,
-                runner.Shirt ?? "—",
-                runner.Modality ?? "—",
-                runner.Category ?? "—",
-                $"Leitura às {Last.At:HH:mm:ss}");
+                runner.Shirt ?? string.Empty,
+                runner.Modality ?? string.Empty,
+                runner.Category ?? string.Empty,
+                $"Leitura às {Last.At:HH:mm:ss}",
+                runner.BirthDate ?? string.Empty);
         }
     }
 

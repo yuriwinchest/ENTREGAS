@@ -5,52 +5,90 @@
     O VISUAL DO TELÃO, EM UM LUGAR SÓ.
 
     Este mesmo controle é usado pela janela que vai para a TV e pela aba TELÃO
-    dentro do programa. Antes o desenho vivia solto dentro da janela: qualquer
-    ajuste teria de ser feito duas vezes, e uma hora as duas telas divergiriam.
+    dentro do programa. O desenho vive aqui para não divergir entre os dois.
 
-    O Viewbox faz o conteúdo caber tanto num monitor de 55" quanto na prévia de
-    alguns centímetros dentro da aba, sem nenhum cálculo de tamanho.
+    A faixa de dados é uma LISTA, não um conjunto de rótulos fixos: cada evento
+    traz uma planilha diferente, e uma prova sem categoria ou sem camisa não
+    deve mostrar rótulo com travessão. O que a lista não tem, o telão não
+    desenha.
   -->
   <Grid Background="Black">
-    <Image x:Name="BackgroundImage" Stretch="UniformToFill" Opacity="0.5"/>
-    <Rectangle Fill="#D60B0D0E"/>
-    <Rectangle Margin="28" Stroke="#42FFFFFF" StrokeThickness="1"/>
+    <Image x:Name="BackgroundImage" Stretch="UniformToFill" Opacity="0.45"/>
+    <Rectangle Fill="#DC0B0D0E"/>
     <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <Grid Width="1440" Height="810" Margin="70">
+      <Grid Width="1440" Height="810" Margin="64">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
           <RowDefinition Height="*"/>
           <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
-          <Rectangle Width="10" Height="72" Fill="#FFFF6A00" Margin="0,0,20,0"/>
-          <StackPanel>
-            <TextBlock x:Name="BoardTitle" Text="ENTREGA DE KITS" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="25" FontWeight="Bold"/>
-            <TextBlock Text="CHIPOWER • OPERAÇÃO DO EVENTO" Foreground="#FFD7DCDE" FontSize="18" FontWeight="SemiBold" Margin="0,5,0,0"/>
+        <!-- Cabeçalho -->
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Rectangle Width="9" Height="62" Fill="#FFFF6A00" Margin="0,0,18,0"/>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock x:Name="BoardTitle" Text="ENTREGA DE KITS" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="26" FontWeight="Bold"/>
+              <TextBlock Text="CHIPOWER • OPERAÇÃO DO EVENTO" Foreground="#FFA8AFB3" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,0"/>
+            </StackPanel>
           </StackPanel>
-        </StackPanel>
+          <Border Grid.Column="1" Background="#C914181A" BorderBrush="#40FFFFFF" BorderThickness="1" CornerRadius="4" Padding="18,10">
+            <Image Source="pack://application:,,,/EntregaDeKits;component/Resources/chipower-escuro.jpeg" Height="56" Width="176" Stretch="Uniform"/>
+          </Border>
+        </Grid>
 
-        <Border Grid.Column="1" Background="#C914181A" BorderBrush="#55FFFFFF" BorderThickness="1" CornerRadius="3" Padding="20,12">
-          <Image Source="pack://application:,,,/EntregaDeKits;component/Resources/chipower-escuro.jpeg" Height="62" Width="190" Stretch="Uniform"/>
+        <!-- Corpo: estado, número em destaque, nome e a grade de dados -->
+        <Border Grid.Row="1" Background="#C0121517" BorderBrush="#40FFFFFF" BorderThickness="1" CornerRadius="6" Padding="52,40" Margin="0,44,0,36" VerticalAlignment="Center">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="State" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"
+                       Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="34" FontWeight="Bold" TextWrapping="Wrap"/>
+
+            <!-- Número de peito: o dado que se lê de longe -->
+            <StackPanel x:Name="NumberPanel" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="32,0,0,0">
+              <TextBlock Text="NÚMERO" Foreground="#FFA8AFB3" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,0,2"/>
+              <TextBlock x:Name="Number" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="96" FontWeight="Bold" HorizontalAlignment="Right" LineHeight="96"/>
+            </StackPanel>
+
+            <TextBlock x:Name="ParticipantName" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"
+                       Foreground="White" FontFamily="Bahnschrift SemiCondensed" FontSize="82" FontWeight="Bold" TextWrapping="Wrap" Margin="0,10,0,0"/>
+
+            <!-- Grade montada a partir do que a planilha realmente trouxe -->
+            <ItemsControl x:Name="FieldList" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,30,0,0">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Background="#18FFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="4" Padding="22,12" Margin="0,0,16,14">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Label}" Foreground="#FFA8AFB3" FontSize="17" FontWeight="Bold"/>
+                      <TextBlock Text="{Binding Value}" Foreground="#FFF6F5EE" FontFamily="Bahnschrift SemiCondensed" FontSize="38" FontWeight="Bold" Margin="0,2,0,0"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Grid>
         </Border>
 
-        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#B9121517" BorderBrush="#4CFFFFFF" BorderThickness="1" CornerRadius="5" Padding="48,38" Margin="0,62,0,52" VerticalAlignment="Center">
-          <StackPanel VerticalAlignment="Center">
-            <TextBlock x:Name="State" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="35" FontWeight="Bold" TextWrapping="Wrap"/>
-            <TextBlock x:Name="ParticipantName" Foreground="White" FontFamily="Bahnschrift SemiCondensed" FontSize="88" FontWeight="Bold" TextWrapping="Wrap" Margin="0,17,0,22"/>
-            <Border x:Name="InfoBox" Background="#1CFFFFFF" Padding="18,13" HorizontalAlignment="Left" MaxWidth="1180">
-              <TextBlock x:Name="Info" Foreground="#FFF6F5EE" FontSize="27" FontWeight="SemiBold" TextWrapping="Wrap"/>
-            </Border>
-          </StackPanel>
-        </Border>
-
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#E8FF6A00" Padding="23,15" CornerRadius="3">
-          <TextBlock x:Name="Detail" Foreground="#FF101112" FontFamily="Bahnschrift SemiCondensed" FontSize="28" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+        <Border Grid.Row="2" Background="#E8FF6A00" Padding="24,16" CornerRadius="4">
+          <TextBlock x:Name="Detail" Foreground="#FF101112" FontFamily="Bahnschrift SemiCondensed" FontSize="27" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
         </Border>
       </Grid>
     </Viewbox>

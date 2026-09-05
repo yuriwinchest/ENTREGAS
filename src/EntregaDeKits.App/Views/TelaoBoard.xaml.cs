@@ -25,20 +25,17 @@ public partial class TelaoBoard : UserControl
         State.Text = model.State;
         ParticipantName.Text = model.Name;
         Detail.Text = model.Detail;
-        Info.Text = string.Join("   •   ", new[]
-        {
-            string.IsNullOrWhiteSpace(model.Number) ? null : "Nº " + model.Number,
-            string.IsNullOrWhiteSpace(model.Chip) ? null : "CHIP " + model.Chip,
-            model.Shirt,
-            model.Modality,
-            model.Category
-        }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
-        // Sem dados do corredor a faixa fica vazia: escondê-la evita um
-        // retângulo cinza solto no meio do telão, visto pelo público.
-        InfoBox.Visibility = Info.Text.Length == 0
-            ? System.Windows.Visibility.Collapsed
-            : System.Windows.Visibility.Visible;
+        // Sem número de peito o bloco inteiro sai de cena, para o nome ocupar
+        // a largura toda em vez de conviver com um espaço vazio.
+        var temNumero = !string.IsNullOrWhiteSpace(model.Number);
+        NumberPanel.Visibility = temNumero
+            ? System.Windows.Visibility.Visible
+            : System.Windows.Visibility.Collapsed;
+        Number.Text = temNumero ? model.Number : string.Empty;
+
+        // A grade é o que a planilha trouxe: nada de rótulo com travessão.
+        FieldList.ItemsSource = model.Fields;
     }
 
     public void SetBackground(string path)

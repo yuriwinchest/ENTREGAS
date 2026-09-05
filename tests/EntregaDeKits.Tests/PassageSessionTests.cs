@@ -102,18 +102,51 @@ public class PassageSessionTests
     }
 
     [Fact]
-    public void OTelaoNaoRecebeCpfNemNascimento()
+    public void OTelaoNuncaRecebeCpf()
     {
-        // O telão fica virado para o público: dado sensível não pode chegar lá.
+        // O telão fica virado para o público. O CPF nao tem campo no
+        // DisplayModel e nao pode ganhar um: identifica a pessoa por completo.
+        //
+        // A data de nascimento passou a aparecer por decisao do Product Owner,
+        // que pediu numero, chip, nome, nascimento, modalidade e camisa no
+        // telao. E dado pessoal exposto ao publico, e isso foi dito a ele.
         var pessoa = new Participant(1, "1", "51921", "ADILSON", "755.216.365-87", "25/05/1975", "M", "G", "10KM", "GERAL");
         var session = ComLista(pessoa);
 
         session.Read("51921", Moment);
         var telao = session.Display;
-        var tudoQueApareceNoTelao = string.Join("|", telao.State, telao.Name, telao.Number, telao.Chip, telao.Shirt, telao.Modality, telao.Category, telao.Detail);
+        var tudoQueApareceNoTelao = string.Join("|",
+            telao.State, telao.Name, telao.Number, telao.Chip, telao.Shirt,
+            telao.Modality, telao.Category, telao.Detail, telao.BirthDate,
+            string.Join("|", telao.Fields.Select(campo => campo.Label + campo.Value)));
 
         Assert.DoesNotContain("755.216.365-87", tudoQueApareceNoTelao);
-        Assert.DoesNotContain("25/05/1975", tudoQueApareceNoTelao);
+    }
+
+    [Fact]
+    public void OTelaoMostraSoOsCamposQueAPlanilhaTem()
+    {
+        // Uma prova sem categoria nao deve exibir rotulo com travessao.
+        var semCategoria = new Participant(1, "10", "1007", "ANGELE MARIA", null, "18/10/2004", "F", "M", "10KM", null);
+        var session = ComLista(semCategoria);
+
+        session.Read("1007", Moment);
+        var rotulos = session.Display.Fields.Select(campo => campo.Label).ToArray();
+
+        Assert.Equal(["CHIP", "NASCIMENTO", "MODALIDADE", "CAMISA"], rotulos);
+        Assert.DoesNotContain("CATEGORIA", rotulos);
+    }
+
+    [Fact]
+    public void ONumeroDePeitoNaoSeRepeteNaGradeDeCampos()
+    {
+        // Ele tem lugar proprio, em destaque, no canto do telao.
+        var session = ComLista(Corredor(1, "13", "1010", "ANGELICA"));
+
+        session.Read("1010", Moment);
+
+        Assert.DoesNotContain("NÚMERO", session.Display.Fields.Select(campo => campo.Label));
+        Assert.Equal("13", session.Display.Number);
     }
 
     [Fact]

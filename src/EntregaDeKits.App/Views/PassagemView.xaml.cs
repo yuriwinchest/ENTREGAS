@@ -156,6 +156,12 @@ public partial class PassagemView : UserControl
     private static string BuildReportLine(ImportReport report, int ambiguous)
     {
         var line = $"Lidos: {report.Imported}  •  Vazias: {report.BlankRows}  •  Inválidas: {report.InvalidRows}  •  CHIP repetido: {report.DuplicateChips}";
+        // A associacao das colunas e automatica; mostrar o resultado e o que
+        // permite perceber na hora se o cabecalho da planilha saiu do padrao.
+        line += report.Columns.Count > 0
+            ? "  •  Colunas: " + string.Join(", ", report.Columns)
+            : "  •  Nenhuma coluna reconhecida pelo cabecalho";
+
         if (ambiguous > 0) line += $"  •  {ambiguous} chip(s) em mais de um corredor serão ignorados";
         return line;
     }
