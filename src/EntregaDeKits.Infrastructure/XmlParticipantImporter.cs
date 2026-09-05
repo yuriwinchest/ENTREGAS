@@ -8,7 +8,7 @@ public sealed class XmlParticipantImporter
 {
     public (IReadOnlyList<Participant> Participants, ImportReport Report) Read(string path)
     {
-        using var stream = File.OpenRead(path);
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         var settings = new XmlReaderSettings
         {
             DtdProcessing = DtdProcessing.Prohibit,

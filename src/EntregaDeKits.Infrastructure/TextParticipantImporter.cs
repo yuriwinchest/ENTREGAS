@@ -16,9 +16,19 @@ public sealed class TextParticipantImporter
         return TabularParticipantParser.Parse(rows);
     }
 
+    private static byte[] LerBytesCompartilhado(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var memoria = new MemoryStream();
+        stream.CopyTo(memoria);
+        return memoria.ToArray();
+    }
+
     internal static string ReadDocument(string path)
     {
-        var bytes = File.ReadAllBytes(path);
+        // Compartilhado: o arquivo pode estar aberto no Excel ou no Bloco de
+        // Notas na hora de anexar, e aqui só se lê.
+        var bytes = LerBytesCompartilhado(path);
         var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
         try
         {

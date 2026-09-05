@@ -8,7 +8,8 @@ public sealed class PdfParticipantImporter
 {
     public (IReadOnlyList<Participant> Participants, ImportReport Report) Read(string path)
     {
-        using var document = PdfDocument.Open(path);
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var document = PdfDocument.Open(stream);
         var lines = new List<string>();
         foreach (var page in document.GetPages())
             lines.AddRange(ExtractLines(page));
