@@ -157,12 +157,118 @@ public partial class MainWindow : Window
         UpdateProgressBoard();
     }
 
-    private void NameSearch_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e) => ApplyRosterFilter(resetPage: true);
+    private void NameSearch_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        ApplyRosterFilter(resetPage: true);
+        SelecionarPorIdentificador(NameSearchBox?.Text, limparBusca: false);
+    }
+
+    private void NameSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key is not (System.Windows.Input.Key.Enter or System.Windows.Input.Key.Return)) return;
+
+        // A leitora encerra a leitura com Enter. Sem tratar aqui, o codigo
+        // seguinte ficaria grudado no anterior dentro do campo.
+        e.Handled = true;
+        SelecionarPorIdentificador(NameSearchBox.Text, limparBusca: true);
+    }
+
+    /// <summary>
+    /// Abre a ficha quando o texto digitado é o CHIP ou o número de um corredor
+    /// só. É por aqui que a leitora de mesa associa a etiqueta à pessoa: ela se
+    /// comporta como teclado, digita o código no campo de busca e o corredor
+    /// aparece sem ninguém precisar clicar na lista.
+    ///
+    /// Fica em silêncio quando o texto casa com mais de um corredor: melhor não
+    /// escolher do que escolher errado na frente do atleta.
+    /// </summary>
+    private void SelecionarPorIdentificador(string? texto, bool limparBusca)
+    {
+        var consulta = (texto ?? string.Empty).Trim();
+        if (consulta.Length == 0) return;
+
+        var encontrados = _roster
+            .Where(person => NameSearch.IsIdentifierOf(person.Number, person.Chip, consulta))
+            .Take(2)
+            .ToArray();
+
+        if (encontrados.Length != 1) return;
+
+        var participante = encontrados[0];
+        if (_current?.Participant?.Id == participante.Id && !limparBusca) return;
+
+        ShowResult(_delivery.SelectForDelivery(participante));
+
+        if (!limparBusca) return;
+        NameSearchBox.Text = string.Empty;
+        NameSearchBox.Focus();
+    }
 
     private void ClearSearch_Click(object sender, RoutedEventArgs e)
     {
         NameSearchBox.Text = string.Empty;
         NameSearchBox.Focus();
+    }
+
+    /// <summary>
+    /// Esvazia a lista carregada.
+    ///
+    /// Antes só existia o "Limpar" ao lado da busca, que limpa o texto da busca
+    /// e nada mais. Quem queria trocar de evento não tinha como zerar o que já
+    /// estava carregado e ficava com a impressão de que o programa não limpava.
+    /// </summary>
+    private async void ClearRoster_Click(object sender, RoutedEventArgs e)
+    {
+        if (_roster.Count == 0)
+        {
+            DeliveryNotice.Text = "Não há lista carregada para limpar.";
+            return;
+        }
+
+        var confirmacao = MessageBox.Show(
+            $"Isto apaga os {_roster.Count} corredores carregados e as entregas registradas nesta instalação." + Environment.NewLine + Environment.NewLine + "Confirma limpar?",
+            "Limpar lista",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirmacao != MessageBoxResult.Yes) return;
+
+        _isReplacingImport = true;
+        Interlocked.Increment(ref _workflowGeneration);
+        await _workflowGate.WaitAsync();
+        try
+        {
+            await _repository.ReplaceParticipantsAsync([], [], 0, 0);
+            _delivery.ClearPending();
+            _current = null;
+            RefreshQueue();
+            NameSearchBox.Text = string.Empty;
+            _page = 1;
+            await ReloadRosterAsync();
+            await RefreshDeliveredListAsync();
+            UpdateProgressBoard();
+
+            AttachedFileText.Text = "Anexe o arquivo dos corredores (TXT, XML, PDF ou Excel).";
+            DeliveryImportReportText.Text = string.Empty;
+            ImportReportText.Text = string.Empty;
+            DeliveryNotice.Text = "Lista limpa. Anexe o arquivo do próximo evento.";
+            OperationNotice.Text = "Lista limpa.";
+            ShowRunnerCard(null, "LISTA LIMPA");
+
+            var idle = DisplayModel.Idle;
+            StateText.Text = idle.State;
+            ParticipantText.Text = idle.Name;
+            DetailsText.Text = idle.Detail;
+            if (!InPassageMode) _presentation?.Update(idle);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(exception.Message, "Limpeza não concluída", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _workflowGate.Release();
+            _isReplacingImport = false;
+        }
     }
 
     private void PrevPage_Click(object sender, RoutedEventArgs e)
@@ -183,7 +289,7 @@ public partial class MainWindow : Window
         var query = NameSearchBox?.Text ?? string.Empty;
         _filtered = NameSearch.Fold(query).Length == 0
             ? _roster
-            : _roster.Where(person => NameSearch.Matches(person.Name, person.Number, query)).ToArray();
+            : _roster.Where(person => NameSearch.Matches(person.Name, person.Number, person.Chip, query)).ToArray();
         if (resetPage) _page = 1;
         ShowCurrentPage();
         RunnerListTitle.Text = _filtered.Count == _roster.Count

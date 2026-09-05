@@ -23,6 +23,7 @@
           <Grid Margin="0,0,0,8">
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <Button Content="Anexar arquivo" Click="AttachList_Click" Style="{StaticResource OrangeButton}" MinWidth="140" Margin="0,0,10,0"/>
+            <Button Grid.Column="2" x:Name="ClearRosterButton" Content="Limpar lista" Click="ClearRoster_Click" MinWidth="120" Margin="10,0,0,0" ToolTip="Apaga a lista carregada e as entregas desta instalação, para começar do zero"/>
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
               <TextBlock x:Name="AttachedFileText" Text="Anexe o arquivo dos corredores (TXT, XML, PDF ou Excel)." Foreground="{StaticResource InkText}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
               <TextBlock x:Name="DeliveryImportReportText" Foreground="{StaticResource Muted}" FontSize="12" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
@@ -71,8 +72,8 @@
                 <TextBlock x:Name="RunnerListTitle" Text="CORREDORES" Foreground="{StaticResource Orange}" FontWeight="Bold" FontSize="12"/>
                 <Grid Grid.Row="1" Margin="0,8,0,8">
                   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                  <TextBox x:Name="NameSearchBox" VerticalContentAlignment="Center" ToolTip="Digite o nome: a lista filtra a cada letra" TextChanged="NameSearch_TextChanged"/>
-                  <Button Grid.Column="1" Content="Limpar" Click="ClearSearch_Click" Margin="8,0,0,8"/>
+                  <TextBox x:Name="NameSearchBox" VerticalContentAlignment="Center" ToolTip="Digite o nome, o número ou passe o chip na leitora" TextChanged="NameSearch_TextChanged" KeyDown="NameSearch_KeyDown"/>
+                  <Button Grid.Column="1" Content="Limpar busca" Click="ClearSearch_Click" Margin="8,0,0,8" ToolTip="Limpa apenas o texto da busca"/>
                 </Grid>
                 <ListBox x:Name="SearchResults" Grid.Row="2" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectionChanged="SearchResults_SelectionChanged">
                   <ListBox.ItemContainerStyle>

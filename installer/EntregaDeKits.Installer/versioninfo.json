@@ -3,13 +3,13 @@
     "FileVersion": {
       "Major": 0,
       "Minor": 4,
-      "Patch": 1,
+      "Patch": 2,
       "Build": 0
     },
     "ProductVersion": {
       "Major": 0,
       "Minor": 4,
-      "Patch": 1,
+      "Patch": 2,
       "Build": 0
     },
     "FileFlagsMask": "3f",
@@ -21,12 +21,12 @@
   "StringFileInfo": {
     "CompanyName": "CHIPOWER",
     "FileDescription": "Instalador Entrega de Kits CHIPOWER",
-    "FileVersion": "0.4.1",
+    "FileVersion": "0.4.2",
     "InternalName": "INSTALAR-Entrega-de-Kits-CHIPOWER",
     "LegalCopyright": "CHIPOWER",
-    "OriginalFilename": "INSTALAR-Entrega-de-Kits-CHIPOWER-v0.4.1-homologacao.exe",
+    "OriginalFilename": "INSTALAR-Entrega-de-Kits-CHIPOWER-v0.4.2-homologacao.exe",
     "ProductName": "Entrega de Kits CHIPOWER",
-    "ProductVersion": "0.4.1"
+    "ProductVersion": "0.4.2"
   },
   "VarFileInfo": {
     "Translation": {

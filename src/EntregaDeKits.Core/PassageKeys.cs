@@ -86,6 +86,22 @@ public static partial class PassageKeys
         return variants;
     }
 
+    /// <summary>
+    /// Duas escritas do mesmo identificador? Compara por interseção das formas
+    /// plausíveis, então o EPC hexadecimal da leitora reconhece o CHIP decimal
+    /// da planilha.
+    /// </summary>
+    public static bool SameIdentifier(string? stored, string? read)
+    {
+        var left = Variants(stored);
+        if (left.Count == 0) return false;
+
+        var right = Variants(read);
+        if (right.Count == 0) return false;
+
+        return left.Intersect(right, StringComparer.Ordinal).Any();
+    }
+
     private static void AddDecimalForms(string digits, Action<string?> add)
     {
         if (!BigInteger.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var value)) return;
