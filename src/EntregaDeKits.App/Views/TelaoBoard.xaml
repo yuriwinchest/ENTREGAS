@@ -6,68 +6,69 @@
 
     Usado pela janela que vai para a TV e pela prévia da aba TELÃO.
 
-    O LOGO DA PROVA TEM FAIXA PRÓPRIA no alto. Como fundo ele nunca aparecia
-    inteiro: o bloco de dados fica no meio da tela e cobria justamente o miolo
-    da arte, além de o fundo levar escurecimento por cima. Agora o logo ocupa
-    uma faixa só dele, sem nada em cima, com escala uniforme — o desenho
-    inteiro cabe, seja largo ou alto.
+    A TELA É DIVIDIDA EM DOIS: o banner do evento ocupa todo o espaço livre no
+    alto, e o bloco com os dados do corredor fica embaixo. Foi o que resolveu o
+    corte da arte: antes o bloco morava no meio e cobria justamente o miolo do
+    desenho, e a arte como fundo ainda era recortada para preencher a tela.
+    Aqui a imagem é reduzida por inteiro (Uniform), então nada some.
 
-    Sem logo escolhido a faixa some por completo e o bloco de dados volta a
-    ocupar o centro, para a tela não ficar com um vão no topo.
+    O espaço de cima é grande de propósito. Todo mundo na fila olha para esta
+    tela, então ali cabe o logo da prova ou um banner de divulgação.
 
-    O FUNDO continua existindo para ambientar, com escurecimento concentrado no
-    miolo (onde o texto precisa de contraste) e fraco nas bordas.
+    NÃO HÁ FAIXA DE RECADO NO RODAPÉ. "Confirme a entrega do kit no notebook" é
+    instrução para quem opera, e o telão é do público. O que sobrou do recado
+    virou uma linha discreta dentro do bloco, para as mensagens que interessam
+    a quem está na frente da tela — como uma etiqueta não encontrada.
   -->
   <Grid Background="Black">
     <Image x:Name="BackgroundImage" Stretch="UniformToFill" Opacity="0.9"/>
 
     <Rectangle>
       <Rectangle.Fill>
-        <RadialGradientBrush GradientOrigin="0.5,0.58" Center="0.5,0.58" RadiusX="0.8" RadiusY="0.75">
-          <GradientStop Color="#F00B0D0E" Offset="0.0"/>
-          <GradientStop Color="#D40B0D0E" Offset="0.55"/>
-          <GradientStop Color="#6B0B0D0E" Offset="1.0"/>
+        <RadialGradientBrush GradientOrigin="0.5,0.72" Center="0.5,0.72" RadiusX="0.85" RadiusY="0.8">
+          <GradientStop Color="#EB0B0D0E" Offset="0.0"/>
+          <GradientStop Color="#C90B0D0E" Offset="0.55"/>
+          <GradientStop Color="#5E0B0D0E" Offset="1.0"/>
         </RadialGradientBrush>
       </Rectangle.Fill>
     </Rectangle>
 
     <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <Grid Width="1440" Height="810" Margin="60,44,60,44">
+      <Grid Width="1440" Height="810" Margin="60,40,60,40">
         <Grid.RowDefinitions>
-          <RowDefinition Height="Auto"/>
           <RowDefinition Height="Auto"/>
           <RowDefinition Height="*"/>
           <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Faixa de identificação da operação -->
+        <!-- Faixa fina de identificação da operação -->
         <Grid Grid.Row="0">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <Rectangle Width="8" Height="54" Fill="#FFFF6A00" Margin="0,0,16,0"/>
+            <Rectangle Width="7" Height="46" Fill="#FFFF6A00" Margin="0,0,14,0"/>
             <StackPanel VerticalAlignment="Center">
-              <TextBlock x:Name="BoardTitle" Text="ENTREGA DE KITS" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="24" FontWeight="Bold"/>
-              <TextBlock Text="CHIPOWER • OPERAÇÃO DO EVENTO" Foreground="#FFC4CACE" FontSize="16" FontWeight="SemiBold" Margin="0,3,0,0"/>
+              <TextBlock x:Name="BoardTitle" Text="ENTREGA DE KITS" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="22" FontWeight="Bold"/>
+              <TextBlock Text="CHIPOWER • OPERAÇÃO DO EVENTO" Foreground="#FFC4CACE" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
             </StackPanel>
           </StackPanel>
-          <Border Grid.Column="1" Background="#D914181A" BorderBrush="#4DFFFFFF" BorderThickness="1" CornerRadius="4" Padding="16,9" VerticalAlignment="Center">
-            <Image Source="pack://application:,,,/EntregaDeKits;component/Resources/chipower-escuro.jpeg" Height="48" Width="150" Stretch="Uniform"/>
+          <Border Grid.Column="1" Background="#D914181A" BorderBrush="#4DFFFFFF" BorderThickness="1" CornerRadius="4" Padding="14,8" VerticalAlignment="Center">
+            <Image Source="pack://application:,,,/EntregaDeKits;component/Resources/chipower-escuro.jpeg" Height="42" Width="132" Stretch="Uniform"/>
           </Border>
         </Grid>
 
-        <!-- Faixa do logo da prova: nada por cima, desenho inteiro -->
-        <Border x:Name="LogoBand" Grid.Row="1" Visibility="Collapsed" Margin="0,22,0,0" Padding="0">
-          <Image x:Name="EventLogo" Height="176" MaxWidth="1180" Stretch="Uniform"
-                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        </Border>
+        <!-- Banner do evento: fica com todo o espaço que sobra, sem corte -->
+        <Image x:Name="EventLogo" Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly"
+               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20,0,20"
+               Visibility="Collapsed"/>
 
-        <!-- Bloco de dados do corredor -->
-        <Border Grid.Row="2" Background="#E8101314" BorderBrush="#59FFFFFF" BorderThickness="1" CornerRadius="6" Padding="44,28" Margin="0,26,0,22" VerticalAlignment="Center">
+        <!-- Bloco de dados do corredor, encostado embaixo -->
+        <Border x:Name="DataCard" Grid.Row="2" Background="#EB101314" BorderBrush="#59FFFFFF" BorderThickness="1" CornerRadius="6" Padding="44,26" VerticalAlignment="Bottom">
           <Grid>
             <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="Auto"/>
@@ -78,17 +79,17 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock x:Name="State" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"
-                       Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="32" FontWeight="Bold" TextWrapping="Wrap"/>
+                       Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="30" FontWeight="Bold" TextWrapping="Wrap"/>
 
             <StackPanel x:Name="NumberPanel" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="28,0,0,0">
               <TextBlock Text="NÚMERO" Foreground="#FFC4CACE" FontSize="15" FontWeight="Bold" HorizontalAlignment="Right"/>
-              <TextBlock x:Name="Number" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="84" FontWeight="Bold" HorizontalAlignment="Right" LineHeight="84"/>
+              <TextBlock x:Name="Number" Foreground="#FFFF6A00" FontFamily="Bahnschrift SemiCondensed" FontSize="80" FontWeight="Bold" HorizontalAlignment="Right" LineHeight="80"/>
             </StackPanel>
 
             <TextBlock x:Name="ParticipantName" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center"
-                       Foreground="White" FontFamily="Bahnschrift SemiCondensed" FontSize="74" FontWeight="Bold" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                       Foreground="White" FontFamily="Bahnschrift SemiCondensed" FontSize="72" FontWeight="Bold" TextWrapping="Wrap" Margin="0,6,0,0"/>
 
-            <ItemsControl x:Name="FieldList" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,20,0,0">
+            <ItemsControl x:Name="FieldList" Grid.Row="2" Grid.ColumnSpan="2" Margin="0,18,0,0">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <WrapPanel Orientation="Horizontal"/>
@@ -105,11 +106,11 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-          </Grid>
-        </Border>
 
-        <Border Grid.Row="3" Background="#F2FF6A00" Padding="22,14" CornerRadius="4">
-          <TextBlock x:Name="Detail" Foreground="#FF101112" FontFamily="Bahnschrift SemiCondensed" FontSize="26" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+            <!-- Recado discreto: só o que interessa a quem está na frente da tela -->
+            <TextBlock x:Name="Detail" Grid.Row="3" Grid.ColumnSpan="2" Visibility="Collapsed"
+                       Foreground="#FFC4CACE" FontSize="19" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,0"/>
+          </Grid>
         </Border>
       </Grid>
     </Viewbox>

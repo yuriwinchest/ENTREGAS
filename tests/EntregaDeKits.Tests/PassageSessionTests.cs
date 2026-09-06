@@ -138,6 +138,29 @@ public class PassageSessionTests
     }
 
     [Fact]
+    public void InstrucaoDeOperacaoNaoSobeParaOTelao()
+    {
+        // O telao e do publico. Nao ha por que anunciar a um salao de
+        // corredores o que a operadora precisa clicar no notebook dela.
+        var comInstrucao = new DisplayModel("AGUARDANDO CONFIRMAÇÃO", "ANGELE MARIA", "10", "1007",
+            "M", "10KM", "", "Confirme a entrega do kit no notebook.");
+
+        Assert.Equal(string.Empty, comInstrucao.PublicDetail);
+    }
+
+    [Fact]
+    public void RecadoUtilAoPublicoContinuaAparecendo()
+    {
+        var leitura = new DisplayModel("CORREDOR IDENTIFICADO", "ANGELE MARIA", "10", "1007",
+            "M", "10KM", "", "Leitura às 19:12:44");
+        var semDono = new DisplayModel("CHIP FORA DA LISTA", "19992", "", "", "", "", "",
+            "Esta etiqueta não corresponde a nenhum inscrito da lista carregada.");
+
+        Assert.Equal("Leitura às 19:12:44", leitura.PublicDetail);
+        Assert.StartsWith("Esta etiqueta", semDono.PublicDetail);
+    }
+
+    [Fact]
     public void ONumeroDePeitoNaoSeRepeteNaGradeDeCampos()
     {
         // Ele tem lugar proprio, em destaque, no canto do telao.

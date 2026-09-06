@@ -61,6 +61,31 @@ public sealed record DisplayModel(
     /// O número de peito não entra: ele tem lugar próprio, em destaque.
     /// CPF nunca entra — o telão fica virado para o público.
     /// </summary>
+    /// <summary>
+    /// Instruções destinadas a quem opera o balcão. O telão é do público: não
+    /// tem por que anunciar a um salão de corredores o que a operadora precisa
+    /// clicar no notebook.
+    /// </summary>
+    private static readonly string[] RecadosDeOperacao =
+    [
+        "notebook",
+        "confirme a entrega",
+        "confirme a leitura"
+    ];
+
+    /// <summary>O recado que pode aparecer no telão, ou vazio.</summary>
+    public string PublicDetail
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Detail)) return string.Empty;
+
+            return RecadosDeOperacao.Any(termo => Detail.Contains(termo, StringComparison.OrdinalIgnoreCase))
+                ? string.Empty
+                : Detail.Trim();
+        }
+    }
+
     public IReadOnlyList<DisplayField> Fields =>
         new[]
         {

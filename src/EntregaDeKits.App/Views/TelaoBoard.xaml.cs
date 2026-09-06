@@ -1,7 +1,9 @@
 using System.IO;
-using UserControl = System.Windows.Controls.UserControl;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using EntregaDeKits.Core;
+using UserControl = System.Windows.Controls.UserControl;
 
 namespace EntregaDeKits.App.Views;
 
@@ -24,36 +26,46 @@ public partial class TelaoBoard : UserControl
     {
         State.Text = model.State;
         ParticipantName.Text = model.Name;
-        Detail.Text = model.Detail;
 
         // Sem número de peito o bloco inteiro sai de cena, para o nome ocupar
         // a largura toda em vez de conviver com um espaço vazio.
         var temNumero = !string.IsNullOrWhiteSpace(model.Number);
-        NumberPanel.Visibility = temNumero
-            ? System.Windows.Visibility.Visible
-            : System.Windows.Visibility.Collapsed;
+        NumberPanel.Visibility = temNumero ? Visibility.Visible : Visibility.Collapsed;
         Number.Text = temNumero ? model.Number : string.Empty;
 
         // A grade é o que a planilha trouxe: nada de rótulo com travessão.
         FieldList.ItemsSource = model.Fields;
+
+        var recado = model.PublicDetail;
+        Detail.Text = recado;
+        Detail.Visibility = recado.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public void SetBackground(string? path) => BackgroundImage.Source = Carregar(path);
 
     /// <summary>
-    /// Logo da prova, exibido limpo no alto. Sem imagem o espaço some, para o
-    /// cabeçalho não ficar com um vão no meio.
+    /// Banner ou logo do evento, exibido inteiro no espaço de cima.
+    ///
+    /// Sem imagem o bloco de dados volta a ocupar o centro da tela: deixá-lo
+    /// encostado embaixo com um vão enorme em cima ficaria desequilibrado.
     /// </summary>
     public void SetEventLogo(string? path)
     {
         var imagem = Carregar(path);
         EventLogo.Source = imagem;
+        EventLogo.Visibility = imagem is null ? Visibility.Collapsed : Visibility.Visible;
 
-        // A faixa inteira sai de cena sem logo, senão sobra um vão no topo e o
-        // bloco de dados fica jogado para baixo sem motivo.
-        LogoBand.Visibility = imagem is null
-            ? System.Windows.Visibility.Collapsed
-            : System.Windows.Visibility.Visible;
+        if (imagem is null)
+        {
+            Grid.SetRow(DataCard, 1);
+            Grid.SetRowSpan(DataCard, 2);
+            DataCard.VerticalAlignment = VerticalAlignment.Center;
+            return;
+        }
+
+        Grid.SetRow(DataCard, 2);
+        Grid.SetRowSpan(DataCard, 1);
+        DataCard.VerticalAlignment = VerticalAlignment.Bottom;
     }
 
     /// <summary>

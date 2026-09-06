@@ -214,7 +214,7 @@ public partial class MainWindow
     /// </summary>
     private void ChooseEventLogo()
     {
-        var escolhida = EscolherImagem("Escolher o logo da prova");
+        var escolhida = EscolherImagem("Escolher o banner ou logo do evento");
         if (escolhida is null) return;
 
         _settings.SaveLogo(escolhida);
