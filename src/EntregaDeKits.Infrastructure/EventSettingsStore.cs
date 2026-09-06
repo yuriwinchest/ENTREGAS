@@ -64,6 +64,14 @@ public sealed class EventSettingsStore
         Persistir();
     }
 
+    /// <summary>Volta ao telão preto, sem arte nenhuma.</summary>
+    public void ClearImages()
+    {
+        BackgroundPath = null;
+        LogoPath = null;
+        Persistir();
+    }
+
     /// <summary>
     /// Copia a imagem para a pasta do evento. Guardar só o caminho original
     /// deixaria o telão em branco assim que alguém movesse o arquivo.

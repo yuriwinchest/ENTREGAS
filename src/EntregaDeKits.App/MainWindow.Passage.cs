@@ -57,6 +57,11 @@ public partial class MainWindow
         TelaoPanel.ReattachRequested = () => _presentation?.Close();
         TelaoPanel.BackgroundRequested = ChoosePresentationBackground;
         TelaoPanel.LogoRequested = ChooseEventLogo;
+        TelaoPanel.ClearImagesRequested = () =>
+        {
+            _settings.ClearImages();
+            AplicarImagensDoEvento();
+        };
 
         // A leitora digita em quem estiver com o foco. Na janela principal a
         // captura só vale nas abas do modo passagem, para não atrapalhar o

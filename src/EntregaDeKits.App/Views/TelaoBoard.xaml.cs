@@ -69,20 +69,42 @@ public partial class TelaoBoard : UserControl
     }
 
     /// <summary>
-    /// Carrega a imagem inteira na memória e solta o arquivo. Sem OnLoad o WPF
-    /// mantém o arquivo aberto, e trocar a arte do evento passaria a falhar por
-    /// arquivo em uso.
+    /// Carrega a imagem a partir dos BYTES, não do caminho.
+    ///
+    /// POR QUE ASSIM: o WPF mantém um cache de imagens indexado pela URI, e as
+    /// artes do evento são sempre gravadas no mesmo caminho ("logo.png"). Ao
+    /// escolher um banner novo, o caminho não mudava e o WPF devolvia a imagem
+    /// ANTIGA do cache — só reiniciando o programa a troca aparecia. Foi
+    /// exatamente o que a operadora relatou.
+    ///
+    /// Lendo os bytes e alimentando o BitmapImage por stream não existe URI
+    /// para cachear, e o arquivo é liberado logo em seguida.
     /// </summary>
     private static BitmapImage? Carregar(string? path)
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
 
-        var image = new BitmapImage();
-        image.BeginInit();
-        image.UriSource = new Uri(path, UriKind.Absolute);
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.EndInit();
-        image.Freeze();
-        return image;
+        try
+        {
+            using var memoria = new MemoryStream(File.ReadAllBytes(path));
+
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            // Sem CreateOptions aqui: IgnoreImageCache junto com StreamSource
+            // faz o WPF procurar a URI (nula) como chave de cache e lançar
+            // ArgumentNullException. Carregar por stream já não passa pelo
+            // cache de URI, então a opção era redundante além de fatal.
+            image.StreamSource = memoria;
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+        catch (Exception exception) when (exception is IOException or NotSupportedException or ArgumentException)
+        {
+            // Arquivo corrompido ou formato que o WPF não abre: o telão fica
+            // sem a arte, mas o evento não para por causa de uma imagem.
+            return null;
+        }
     }
 }

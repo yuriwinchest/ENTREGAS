@@ -60,6 +60,11 @@ public partial class TelaoView : UserControl
 
     private void Logo_Click(object sender, RoutedEventArgs eventArgs) => LogoRequested?.Invoke();
 
+    /// <summary>Pedido de tirar fundo e banner.</summary>
+    public Action? ClearImagesRequested { get; set; }
+
+    private void ClearImages_Click(object sender, RoutedEventArgs eventArgs) => ClearImagesRequested?.Invoke();
+
     public void SetDetached(bool detached)
     {
         DetachedVeil.Visibility = detached ? Visibility.Visible : Visibility.Collapsed;

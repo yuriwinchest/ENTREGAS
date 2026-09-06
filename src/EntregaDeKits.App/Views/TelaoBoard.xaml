@@ -59,9 +59,21 @@
           </Border>
         </Grid>
 
-        <!-- Banner do evento: fica com todo o espaço que sobra, sem corte -->
-        <Image x:Name="EventLogo" Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly"
-               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,20,0,20"
+        <!--
+          Banner do evento: FAIXA LARGA DE ALTURA FIXA, no espírito da capa do
+          YouTube ou do banner de topo de site.
+
+          A altura fixa é o ponto. Antes esta área era elástica e crescia com o
+          espaço livre: uma arte quadrada esticava até ocupar a tela inteira e
+          engolia o resto do telão. Com o teto de 300 a faixa tem sempre a
+          mesma proporção, e a imagem se ajusta a ela — nunca o contrário.
+
+          Stretch Uniform mantém a arte inteira: uma imagem larga preenche a
+          faixa de ponta a ponta, e uma quadrada aparece centralizada, menor,
+          sem cortar nada e sem desmontar o layout.
+        -->
+        <Image x:Name="EventLogo" Grid.Row="1" Height="300" Stretch="Uniform"
+               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,22,0,0"
                Visibility="Collapsed"/>
 
         <!-- Bloco de dados do corredor, encostado embaixo -->

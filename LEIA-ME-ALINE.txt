@@ -1,4 +1,4 @@
-ENTREGA DE KITS CHIPOWER 0.4.8 - HOMOLOGACAO
+ENTREGA DE KITS CHIPOWER 0.4.9 - HOMOLOGACAO
 ==============================================
 
 ATENCAO
@@ -81,8 +81,15 @@ inteiro, e o bloco com os dados do corredor desce para nao cobrir.
 
 Sem logo escolhido a faixa some e os dados voltam para o centro da tela.
 
-O ideal e um PNG com fundo transparente. A imagem e reduzida por inteiro para
-caber na faixa, entao nada e cortado, seja um logo largo ou alto.
+TAMANHO IDEAL DO BANNER: uma imagem LARGA, no estilo da capa do YouTube ou do
+banner de topo de site. Proporcao em torno de 4 para 1 — por exemplo
+1600 x 360 pixels. Assim ela preenche a faixa de ponta a ponta.
+
+Imagem quadrada tambem funciona: ela aparece inteira, centralizada e menor,
+sem cortar nada e sem desmontar o telao. So nao ocupa a largura toda.
+
+"Remover imagens" tira o fundo e o banner de uma vez, voltando ao telao preto.
+Trocar o banner nao exige mais fechar o programa.
 
 SO TEM UM MONITOR?
 O telao vai cobrir a tela de trabalho. A propria aba avisa quando isso vai

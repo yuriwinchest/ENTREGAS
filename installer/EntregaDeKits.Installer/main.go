@@ -15,7 +15,7 @@ import (
 	"unsafe"
 )
 
-const version = "0.4.8"
+const version = "0.4.9"
 
 //go:embed payload.zip
 var payload []byte
