@@ -488,9 +488,8 @@ public partial class MainWindow : Window
 
     private void Background_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Filter = "Imagens (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png" };
-        if (dialog.ShowDialog() != true) return;
-        _settings.SaveBackground(dialog.FileName); GetPresentation().SetBackground(dialog.FileName); OperationNotice.Text = "Fundo configurado e persistido para este evento.";
+        ChoosePresentationBackground();
+        OperationNotice.Text = "Fundo do telão configurado e guardado para este evento.";
     }
 
     private async void StartReader_Click(object sender, RoutedEventArgs e)

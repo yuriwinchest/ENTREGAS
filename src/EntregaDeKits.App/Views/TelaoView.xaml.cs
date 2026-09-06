@@ -51,7 +51,14 @@ public partial class TelaoView : UserControl
         Board.Update(_session.Display);
     }
 
-    public void SetBackground(string path) => Board.SetBackground(path);
+    public void SetBackground(string? path) => Board.SetBackground(path);
+
+    public void SetEventLogo(string? path) => Board.SetEventLogo(path);
+
+    /// <summary>Pedido de trocar o logo da prova.</summary>
+    public Action? LogoRequested { get; set; }
+
+    private void Logo_Click(object sender, RoutedEventArgs eventArgs) => LogoRequested?.Invoke();
 
     public void SetDetached(bool detached)
     {

@@ -56,6 +56,7 @@ public partial class MainWindow
         TelaoPanel.DetachRequested = ShowPresentationOn;
         TelaoPanel.ReattachRequested = () => _presentation?.Close();
         TelaoPanel.BackgroundRequested = ChoosePresentationBackground;
+        TelaoPanel.LogoRequested = ChooseEventLogo;
 
         // A leitora digita em quem estiver com o foco. Na janela principal a
         // captura só vale nas abas do modo passagem, para não atrapalhar o
@@ -162,8 +163,8 @@ public partial class MainWindow
         presentation.Width = target.Bounds.Width;
         presentation.Height = target.Bounds.Height;
 
-        if (!string.IsNullOrWhiteSpace(_settings.BackgroundPath))
-            presentation.SetBackground(_settings.BackgroundPath);
+        presentation.SetBackground(_settings.BackgroundPath);
+        presentation.SetEventLogo(_settings.LogoPath);
 
         presentation.Show();
         presentation.WindowState = WindowState.Maximized;
@@ -198,12 +199,44 @@ public partial class MainWindow
 
     private void ChoosePresentationBackground()
     {
-        var dialog = new OpenFileDialog { Filter = "Imagens (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png" };
-        if (dialog.ShowDialog() != true) return;
+        var escolhida = EscolherImagem("Escolher o fundo do telão");
+        if (escolhida is null) return;
 
-        _settings.SaveBackground(dialog.FileName);
-        TelaoPanel.SetBackground(dialog.FileName);
-        _presentation?.SetBackground(dialog.FileName);
+        _settings.SaveBackground(escolhida);
+        AplicarImagensDoEvento();
+    }
+
+    /// <summary>
+    /// O logo da prova é outra imagem, exibida limpa no alto.
+    ///
+    /// Usar a mesma arte como fundo e como logo era o que deixava a marca
+    /// apagada: ela recebia o véu escuro junto com o resto da tela.
+    /// </summary>
+    private void ChooseEventLogo()
+    {
+        var escolhida = EscolherImagem("Escolher o logo da prova");
+        if (escolhida is null) return;
+
+        _settings.SaveLogo(escolhida);
+        AplicarImagensDoEvento();
+    }
+
+    private void AplicarImagensDoEvento()
+    {
+        TelaoPanel.SetBackground(_settings.BackgroundPath);
+        TelaoPanel.SetEventLogo(_settings.LogoPath);
+        _presentation?.SetBackground(_settings.BackgroundPath);
+        _presentation?.SetEventLogo(_settings.LogoPath);
+    }
+
+    private static string? EscolherImagem(string titulo)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = titulo,
+            Filter = "Imagens (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png"
+        };
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 
     /// <summary>Chamado quando a janela do telão nasce, para ela também ouvir a leitora.</summary>

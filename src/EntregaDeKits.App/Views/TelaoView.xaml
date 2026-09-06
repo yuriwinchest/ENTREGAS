@@ -30,6 +30,7 @@
 
         <StackPanel Grid.Column="3" VerticalAlignment="Bottom" Orientation="Horizontal">
           <Button Content="Escolher fundo" Click="Background_Click"/>
+          <Button Content="Logo da prova" Click="Logo_Click" ToolTip="Imagem exibida limpa no alto do telão, sem o escurecimento do fundo"/>
         </StackPanel>
       </Grid>
     </Border>

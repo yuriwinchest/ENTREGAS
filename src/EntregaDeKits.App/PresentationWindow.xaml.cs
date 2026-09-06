@@ -23,7 +23,9 @@ public partial class PresentationWindow : Window
 
     public void Update(DisplayModel model) => Board.Update(model);
 
-    public void SetBackground(string path) => Board.SetBackground(path);
+    public void SetBackground(string? path) => Board.SetBackground(path);
+
+    public void SetEventLogo(string? path) => Board.SetEventLogo(path);
 
     private void Close_Click(object sender, RoutedEventArgs eventArgs) => Close();
 

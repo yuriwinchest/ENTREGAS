@@ -38,15 +38,36 @@ public partial class TelaoBoard : UserControl
         FieldList.ItemsSource = model.Fields;
     }
 
-    public void SetBackground(string path)
+    public void SetBackground(string? path) => BackgroundImage.Source = Carregar(path);
+
+    /// <summary>
+    /// Logo da prova, exibido limpo no alto. Sem imagem o espaço some, para o
+    /// cabeçalho não ficar com um vão no meio.
+    /// </summary>
+    public void SetEventLogo(string? path)
     {
-        if (!File.Exists(path)) return;
+        var imagem = Carregar(path);
+        EventLogo.Source = imagem;
+        EventLogo.Visibility = imagem is null
+            ? System.Windows.Visibility.Collapsed
+            : System.Windows.Visibility.Visible;
+    }
+
+    /// <summary>
+    /// Carrega a imagem inteira na memória e solta o arquivo. Sem OnLoad o WPF
+    /// mantém o arquivo aberto, e trocar a arte do evento passaria a falhar por
+    /// arquivo em uso.
+    /// </summary>
+    private static BitmapImage? Carregar(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
 
         var image = new BitmapImage();
         image.BeginInit();
         image.UriSource = new Uri(path, UriKind.Absolute);
         image.CacheOption = BitmapCacheOption.OnLoad;
         image.EndInit();
-        BackgroundImage.Source = image;
+        image.Freeze();
+        return image;
     }
 }

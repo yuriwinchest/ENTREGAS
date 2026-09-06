@@ -1,4 +1,4 @@
-ENTREGA DE KITS CHIPOWER 0.4.5 - HOMOLOGACAO
+ENTREGA DE KITS CHIPOWER 0.4.6 - HOMOLOGACAO
 ==============================================
 
 ATENCAO
@@ -69,6 +69,15 @@ ABA TELAO - MOSTRAR NA TELEVISAO
 5. Para fechar o telao: botao "Trazer de volta", ou a tecla Esc, ou o botao
    "Fechar telao" no canto da propria televisao.
 6. "Escolher fundo" troca a imagem de fundo do telao e fica guardada.
+7. "Logo da prova" e uma imagem SEPARADA, exibida limpa no alto do telao.
+
+FUNDO E LOGO SAO COISAS DIFERENTES
+O fundo ocupa a tela inteira e leva um escurecimento por cima, senao o nome do
+corredor nao se le de longe. Por isso, se voce colocar a arte da prova como
+FUNDO, ela vai aparecer apagada — e e o esperado.
+Para a marca da prova aparecer forte, use "Logo da prova": essa imagem vai
+limpa no alto, sem escurecimento nenhum. O ideal e um PNG com fundo
+transparente.
 
 SO TEM UM MONITOR?
 O telao vai cobrir a tela de trabalho. A propria aba avisa quando isso vai
