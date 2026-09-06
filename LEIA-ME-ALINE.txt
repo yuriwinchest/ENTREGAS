@@ -1,4 +1,4 @@
-ENTREGA DE KITS CHIPOWER 0.4.10 - HOMOLOGACAO
+ENTREGA DE KITS CHIPOWER 0.4.11 - HOMOLOGACAO
 ==============================================
 
 ATENCAO
@@ -66,8 +66,10 @@ ABA TELAO - MOSTRAR NA TELEVISAO
 3. Clique em "Destacar para a TV". O telao vai para a televisao em tela cheia,
    e voce continua trabalhando normalmente na aba PASSAGEM do computador.
 4. A previa dentro da aba continua acompanhando o que o publico esta vendo.
-5. Para fechar o telao: botao "Trazer de volta", ou a tecla Esc, ou o botao
-   "Fechar telao" no canto da propria televisao.
+5. Para fechar o telao use o botao "Fechar telao" DENTRO do aplicativo, na
+   aba TELAO. A tela da televisao nao tem botao nenhum de proposito: ela fica
+   exposta ao publico o evento inteiro e precisa mostrar so a marca e o
+   corredor. A tecla Esc tambem encerra, como saida de emergencia.
 6. "Escolher fundo" troca a imagem de fundo do telao e fica guardada.
 7. "Logo da prova" e uma imagem SEPARADA, exibida limpa no alto do telao.
 

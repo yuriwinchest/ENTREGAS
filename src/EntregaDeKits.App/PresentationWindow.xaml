@@ -7,10 +7,17 @@
         WindowStyle="None" ResizeMode="NoResize" Background="Black"
         PreviewKeyDown="Window_PreviewKeyDown">
   <Grid>
+    <!--
+      NADA DE BOTAO AQUI.
+
+      Esta janela vai para a televisao e fica exposta ao publico o evento
+      inteiro. Um botao "Fechar telao" no canto e ruido permanente numa tela
+      que deveria mostrar so a marca do evento e o corredor.
+
+      Quem fecha e o operador, pelo botao "Trazer de volta" na aba TELAO do
+      computador — que e onde ele esta trabalhando de qualquer forma. A tecla
+      Esc continua funcionando como saida de emergencia, sem ocupar espaco.
+    -->
     <views:TelaoBoard x:Name="Board"/>
-    <Button Panel.ZIndex="10" Content="Fechar telão  ×" Click="Close_Click"
-            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="24" Padding="16,10"
-            Background="#D914181A" BorderBrush="#FFFF6A00" Foreground="White"
-            ToolTip="Fechar telão (Esc)"/>
   </Grid>
 </Window>

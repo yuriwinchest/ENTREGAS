@@ -25,7 +25,7 @@
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
           <Button x:Name="DetachButton" Content="Destacar para a TV" Click="Detach_Click" Style="{StaticResource OrangeButton}" MinWidth="180"/>
-          <Button x:Name="ReattachButton" Content="Trazer de volta" Click="Reattach_Click" MinWidth="150"/>
+          <Button x:Name="ReattachButton" Content="Fechar telão" Click="Reattach_Click" MinWidth="150" ToolTip="Fecha a janela que está na televisão. É por aqui que se fecha: o telão não tem botão, para não poluir a tela do público."/>
         </StackPanel>
 
         <StackPanel Grid.Column="3" VerticalAlignment="Bottom" Orientation="Horizontal">

@@ -89,9 +89,11 @@ public partial class TelaoView : UserControl
         var preferred = Array.FindIndex(screens, screen => !screen.Primary);
         ScreenPicker.SelectedIndex = preferred >= 0 ? preferred : 0;
 
+        // O telão não tem botão de fechar: ele fica exposto ao público o evento
+        // inteiro. Quem fecha é o operador, por aqui.
         StatusText.Text = screens.Length > 1
-            ? "O telão abre numa janela própria, sem bordas. Feche pelo botão do canto ou pela tecla Esc."
-            : "Só há um monitor conectado: o telão vai cobrir esta tela. Ligue a televisão como segundo monitor antes de destacar, ou feche com a tecla Esc.";
+            ? "O telão abre numa janela própria, sem bordas e sem botões — a tela do público fica limpa. Para encerrar, use \"Fechar telão\" aqui (a tecla Esc também funciona)."
+            : "Só há um monitor conectado: o telão vai cobrir esta tela. Ligue a televisão como segundo monitor antes de destacar, ou encerre com \"Fechar telão\" e a tecla Esc.";
     }
 
     private static string Describe(Forms.Screen screen, int index)

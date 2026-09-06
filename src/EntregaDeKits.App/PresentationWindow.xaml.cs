@@ -27,8 +27,10 @@ public partial class PresentationWindow : Window
 
     public void SetEventLogo(string? path) => Board.SetEventLogo(path);
 
-    private void Close_Click(object sender, RoutedEventArgs eventArgs) => Close();
-
+    /// <summary>
+    /// Saída de emergência pelo teclado. O botão visível saiu da tela: quem
+    /// fecha o telão é o operador, pelo "Trazer de volta" da aba TELÃO.
+    /// </summary>
     private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs eventArgs)
     {
         if (eventArgs.Key != System.Windows.Input.Key.Escape) return;
