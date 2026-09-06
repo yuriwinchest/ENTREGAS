@@ -10,7 +10,7 @@
         </StackPanel>
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
           <Button Content="Abrir telão" Click="OpenPresentation_Click" Margin="0,0,6,0" Padding="12,6" MinHeight="32"/>
-          <Button Content="Escolher fundo" Click="Background_Click" Margin="0,0,10,0" Padding="12,6" MinHeight="32"/>
+          <Button Content="Banner do telão" Click="Banner_Click" Margin="0,0,10,0" Padding="12,6" MinHeight="32" ToolTip="Imagem larga exibida no alto do telão, inteira"/>
           <Image Source="pack://application:,,,/Resources/chipower-claro.jpeg" Height="32" Width="104" Stretch="Uniform"/>
         </StackPanel>
       </Grid>

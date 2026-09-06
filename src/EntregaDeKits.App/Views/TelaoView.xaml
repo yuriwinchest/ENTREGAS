@@ -29,9 +29,9 @@
         </StackPanel>
 
         <StackPanel Grid.Column="3" VerticalAlignment="Bottom" Orientation="Horizontal">
-          <Button Content="Escolher fundo" Click="Background_Click"/>
-          <Button Content="Banner / logo" Click="Logo_Click" ToolTip="Faixa larga no alto do telão: logo da prova ou banner de divulgação"/>
-          <Button Content="Remover imagens" Click="ClearImages_Click" ToolTip="Tira o fundo e o banner, voltando o telão ao preto"/>
+          <Button Content="Banner do evento" Click="Logo_Click" Style="{StaticResource OrangeButton}" ToolTip="Imagem larga exibida INTEIRA no alto do telão. É esta que você quer para divulgar a prova."/>
+          <Button Content="Papel de parede" Click="Background_Click" ToolTip="Preenche a tela toda por trás de tudo e é RECORTADA nas bordas. Serve só para ambientar."/>
+          <Button Content="Remover imagens" Click="ClearImages_Click" ToolTip="Tira o papel de parede e o banner, voltando o telão ao preto"/>
         </StackPanel>
       </Grid>
     </Border>

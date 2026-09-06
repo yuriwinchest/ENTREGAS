@@ -486,10 +486,10 @@ public partial class MainWindow : Window
         ShowPresentationOn(PreferredScreenIndex());
     }
 
-    private void Background_Click(object sender, RoutedEventArgs e)
+    private void Banner_Click(object sender, RoutedEventArgs e)
     {
-        ChoosePresentationBackground();
-        OperationNotice.Text = "Fundo do telão configurado e guardado para este evento.";
+        ChooseEventLogo();
+        OperationNotice.Text = "Banner do telão configurado e guardado para este evento.";
     }
 
     private async void StartReader_Click(object sender, RoutedEventArgs e)

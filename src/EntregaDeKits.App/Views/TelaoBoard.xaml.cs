@@ -55,17 +55,9 @@ public partial class TelaoBoard : UserControl
         EventLogo.Source = imagem;
         EventLogo.Visibility = imagem is null ? Visibility.Collapsed : Visibility.Visible;
 
-        if (imagem is null)
-        {
-            Grid.SetRow(DataCard, 1);
-            Grid.SetRowSpan(DataCard, 2);
-            DataCard.VerticalAlignment = VerticalAlignment.Center;
-            return;
-        }
-
-        Grid.SetRow(DataCard, 2);
-        Grid.SetRowSpan(DataCard, 1);
-        DataCard.VerticalAlignment = VerticalAlignment.Bottom;
+        // Nada mais a fazer com o layout: o bloco de dados estica sozinho para
+        // ocupar o que sobra. Sem banner a faixa some e ele toma a tela toda;
+        // com banner ele começa logo abaixo. Em nenhum dos casos fica vão.
     }
 
     /// <summary>

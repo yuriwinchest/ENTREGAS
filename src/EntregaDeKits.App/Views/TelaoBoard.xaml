@@ -37,8 +37,8 @@
       <Grid Width="1440" Height="810" Margin="60,40,60,40">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
-          <RowDefinition Height="*"/>
           <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Faixa fina de identificação da operação -->
@@ -63,22 +63,33 @@
           Banner do evento: FAIXA LARGA DE ALTURA FIXA, no espírito da capa do
           YouTube ou do banner de topo de site.
 
-          A altura fixa é o ponto. Antes esta área era elástica e crescia com o
-          espaço livre: uma arte quadrada esticava até ocupar a tela inteira e
-          engolia o resto do telão. Com o teto de 300 a faixa tem sempre a
-          mesma proporção, e a imagem se ajusta a ela — nunca o contrário.
+          O TETO DE ALTURA é o que segura tudo. Antes esta área era elástica e
+          crescia com o espaço livre: uma arte quadrada esticava até ocupar a
+          tela inteira e engolia o resto do telão.
 
-          Stretch Uniform mantém a arte inteira: uma imagem larga preenche a
-          faixa de ponta a ponta, e uma quadrada aparece centralizada, menor,
-          sem cortar nada e sem desmontar o layout.
+          A faixa toma a altura NATURAL da imagem na largura do telão, até 300.
+          Um banner largo de 1440x186 ocupa 171 e nada mais — o bloco de dados
+          sobe e encosta nele, sem espaço morto no meio. Uma arte quadrada para
+          nos 300, aparece inteira e centralizada, e não invade a tela.
+
+          Stretch Uniform mantém a arte inteira: nunca há corte.
         -->
-        <Image x:Name="EventLogo" Grid.Row="1" Height="300" Stretch="Uniform"
-               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,22,0,0"
+        <Image x:Name="EventLogo" Grid.Row="1" MaxHeight="300" Stretch="Uniform"
+               HorizontalAlignment="Center" Margin="0,22,0,0"
                Visibility="Collapsed"/>
 
         <!-- Bloco de dados do corredor, encostado embaixo -->
-        <Border x:Name="DataCard" Grid.Row="2" Background="#EB101314" BorderBrush="#59FFFFFF" BorderThickness="1" CornerRadius="6" Padding="44,26" VerticalAlignment="Bottom">
-          <Grid>
+        <!--
+          O bloco de dados ESTICA para ocupar tudo o que sobra abaixo do banner.
+
+          Antes ele tinha altura própria e ficava encostado embaixo, deixando um
+          vão preto entre o banner e ele — pior ainda com banner largo e baixo,
+          que ocupa pouca altura. Esticando, banner e bloco preenchem a tela
+          juntos e não existe mais espaço vazio, seja qual for a proporção da
+          arte. O conteúdo fica centralizado dentro do bloco.
+        -->
+        <Border x:Name="DataCard" Grid.Row="2" Background="#EB101314" BorderBrush="#59FFFFFF" BorderThickness="1" CornerRadius="6" Padding="44,26" Margin="0,22,0,0">
+          <Grid VerticalAlignment="Center">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="Auto"/>
