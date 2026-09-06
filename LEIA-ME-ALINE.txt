@@ -1,4 +1,4 @@
-ENTREGA DE KITS CHIPOWER 0.4.6 - HOMOLOGACAO
+ENTREGA DE KITS CHIPOWER 0.4.7 - HOMOLOGACAO
 ==============================================
 
 ATENCAO
@@ -75,9 +75,14 @@ FUNDO E LOGO SAO COISAS DIFERENTES
 O fundo ocupa a tela inteira e leva um escurecimento por cima, senao o nome do
 corredor nao se le de longe. Por isso, se voce colocar a arte da prova como
 FUNDO, ela vai aparecer apagada — e e o esperado.
-Para a marca da prova aparecer forte, use "Logo da prova": essa imagem vai
-limpa no alto, sem escurecimento nenhum. O ideal e um PNG com fundo
-transparente.
+Para a marca da prova aparecer forte, use "Logo da prova". Essa imagem ganha
+uma FAIXA SO DELA no alto do telao: nada fica por cima, o desenho aparece
+inteiro, e o bloco com os dados do corredor desce para nao cobrir.
+
+Sem logo escolhido a faixa some e os dados voltam para o centro da tela.
+
+O ideal e um PNG com fundo transparente. A imagem e reduzida por inteiro para
+caber na faixa, entao nada e cortado, seja um logo largo ou alto.
 
 SO TEM UM MONITOR?
 O telao vai cobrir a tela de trabalho. A propria aba avisa quando isso vai

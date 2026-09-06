@@ -48,7 +48,10 @@ public partial class TelaoBoard : UserControl
     {
         var imagem = Carregar(path);
         EventLogo.Source = imagem;
-        EventLogo.Visibility = imagem is null
+
+        // A faixa inteira sai de cena sem logo, senão sobra um vão no topo e o
+        // bloco de dados fica jogado para baixo sem motivo.
+        LogoBand.Visibility = imagem is null
             ? System.Windows.Visibility.Collapsed
             : System.Windows.Visibility.Visible;
     }
